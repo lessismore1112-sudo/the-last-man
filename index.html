@@ -163,9 +163,15 @@
   }
   @media (max-width: 760px) { .hero { grid-template-columns: 1fr; } }
   .hero-main { padding: 26px 28px 30px; position: relative; overflow: hidden; }
+  /* watermark: CSS-drawn targeting reticle (絵文字非依存 — iOSで☣が絵文字化するため) */
   .hero-main::before {
-    content: "☣"; position: absolute; right: -14px; top: -46px;
-    font-size: 250px; line-height: 1; color: rgba(125,255,154,.055);
+    content: ""; position: absolute; right: -70px; top: -70px;
+    width: 280px; height: 280px; border-radius: 50%;
+    border: 2px solid rgba(125,255,154,.09);
+    background:
+      radial-gradient(circle, transparent 62px, rgba(125,255,154,.09) 62px 64px, transparent 64px),
+      linear-gradient(rgba(125,255,154,.09), rgba(125,255,154,.09)) 50% 50% / 2px 100% no-repeat,
+      linear-gradient(rgba(125,255,154,.09), rgba(125,255,154,.09)) 50% 50% / 100% 2px no-repeat;
     pointer-events: none;
   }
   .hero-side { border-left: 1px solid var(--line); padding: 22px 24px; display: flex; flex-direction: column; gap: 6px; }
@@ -567,7 +573,7 @@
     <div class="cats" id="cats"></div>
 
     <section class="next-sec">
-      <div class="next-head"><h2>⚠ 次に取るべきスキル — 司令部推奨</h2></div>
+      <div class="next-head"><h2>★ 次に取るべきスキル — 司令部推奨</h2></div>
       <ol class="next-list" id="nextList"></ol>
     </section>
   </section>
@@ -590,7 +596,7 @@
     <div class="sim-box">
       <div class="sim-log" id="simLog"></div>
       <div class="sim-choices" id="simChoices"></div>
-      <button class="sim-restart" id="simRestart">▶ RESTART — DAY 0 からやり直す</button>
+      <button class="sim-restart" id="simRestart">▸ RESTART — DAY 0 からやり直す</button>
     </div>
   </section>
 
@@ -1384,7 +1390,7 @@ function renderSim() {
       const p2 = simProb(ch.cat);
       const roll = Math.random();
       if (roll < p2) {
-        sim.logs.push(`<p class="sim-ok">✔ ${ch.ok}</p>`);
+        sim.logs.push(`<p class="sim-ok">✓ ${ch.ok}</p>`);
         sim.idx++;
         if (sim.idx >= EVENTS.length) {
           sim.logs.push(`<p class="sim-day">■ DAY 93 — 集結地点に到達。</p><p class="sim-ok">90日間の生存を確認。半年後、あなたの拠点は「北の砦」と呼ばれている。現実のステータスをさらに上げて、次は全選択肢を制覇せよ。</p>`);
