@@ -1,0 +1,1433 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>THE LAST MAN — 最後の漢・福島勇太</title>
+<style>
+  /* ============================================================
+     FUKUSHIMA YUTA — bunker terminal / survival dossier v3
+     Committed single-theme world: 深夜の作戦司令室
+     ============================================================ */
+  :root {
+    --ground: #101208;
+    --panel: #181c11;
+    --panel-2: #1d2314;
+    --line: #3a4030;
+    --bone: #e7e2cf;
+    --bone-dim: #a8a48f;
+    --bone-faint: #6f6d5c;
+    --hazard: #e8a13c;
+    --blood: #c1443a;
+    --moss: #8fb35a;
+    --mono: "SF Mono", ui-monospace, "Menlo", "Consolas", monospace;
+    --sans: "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Yu Gothic", "Noto Sans JP", sans-serif;
+    --display: "Impact", "Haettenschweiler", "Arial Narrow Bold", "Arial Black", sans-serif;
+  }
+  html { background: var(--ground); }
+  body {
+    background:
+      repeating-linear-gradient(0deg, rgba(255,255,255,0.012) 0 1px, transparent 1px 3px),
+      repeating-linear-gradient(115deg, transparent 0 42px, rgba(255,255,255,0.008) 42px 43px),
+      repeating-linear-gradient(90deg, rgba(0,0,0,.05) 0 2px, transparent 2px 170px),
+      var(--ground);
+    color: var(--bone);
+    font-family: var(--sans);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  /* cinematic vignette */
+  body::after {
+    content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 60;
+    background: radial-gradient(ellipse at 50% 38%, transparent 52%, rgba(0,0,0,0.5) 100%);
+  }
+  .wrap { max-width: 980px; margin: 0 auto; padding: 28px 20px 80px; }
+
+  /* ---------- header ---------- */
+  .stamp-row {
+    display: flex; justify-content: space-between; align-items: center;
+    font-family: var(--mono); font-size: 11px; letter-spacing: .18em;
+    color: var(--bone-faint); text-transform: uppercase;
+    border-bottom: 1px solid var(--line); padding-bottom: 10px;
+  }
+  .stamp-row .red {
+    color: var(--blood); border: 3px double var(--blood); padding: 3px 12px;
+    font-family: var(--display); font-size: 15px; letter-spacing: .3em;
+    transform: rotate(-5deg); background: rgba(193,68,58,.06);
+  }
+  .alert-bar {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 14px; padding: 7px 12px;
+    border: 1px solid var(--blood);
+    font-family: var(--mono); font-size: 10.5px; letter-spacing: .2em;
+    color: var(--blood); text-transform: uppercase;
+    background: repeating-linear-gradient(-45deg, rgba(193,68,58,.07) 0 10px, transparent 10px 20px);
+  }
+  .alert-bar i {
+    width: 9px; height: 9px; border-radius: 50%; background: var(--blood); flex: none;
+    animation: pulse 1.2s steps(2) infinite;
+  }
+  @keyframes pulse { 50% { opacity: .25; } }
+  @media (prefers-reduced-motion: reduce) { .alert-bar i { animation: none; } }
+  .eyebrow {
+    margin-top: 22px;
+    font-family: var(--mono); font-size: 10.5px; letter-spacing: .34em;
+    color: var(--hazard); text-transform: uppercase;
+  }
+  h1 {
+    margin: 8px 0 4px; position: relative;
+    font-weight: 900; line-height: .95;
+    text-wrap: balance;
+  }
+  h1 .en {
+    display: block;
+    font-family: var(--display); font-weight: 400;
+    font-size: clamp(58px, 11vw, 112px);
+    letter-spacing: .03em; text-transform: uppercase;
+    color: var(--bone);
+    text-shadow: 4px 4px 0 rgba(193,68,58,.4);
+  }
+  /* stencil-cut lettering + print misregistration */
+  @supports ((-webkit-background-clip: text) or (background-clip: text)) {
+    h1 .en {
+      background: repeating-linear-gradient(0deg,
+        var(--bone) 0 .30em, transparent .30em .335em,
+        var(--bone) .335em .55em, transparent .55em .585em,
+        var(--bone) .585em 2em);
+      -webkit-background-clip: text; background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: none;
+      filter: drop-shadow(4px 4px 0 rgba(193,68,58,.5));
+    }
+  }
+  /* WWII white-star insignia */
+  .star-badge {
+    position: absolute; right: 2px; top: 4px;
+    width: 88px; height: 88px;
+    border: 4px solid var(--bone); border-radius: 50%;
+    opacity: .8; transform: rotate(-8deg);
+  }
+  .star-badge::after {
+    content: ""; position: absolute; inset: 13%;
+    background: var(--bone);
+    clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+  }
+  @media (max-width: 720px) { .star-badge { display: none; } }
+  h1 .jp {
+    display: block; margin-top: 6px;
+    font-size: clamp(20px, 3.6vw, 32px); letter-spacing: .18em;
+    color: var(--hazard);
+  }
+  .subtitle { color: var(--bone-dim); font-size: 14px; margin: 0 0 8px; }
+
+  /* ---------- tabs ---------- */
+  .tabs {
+    position: sticky; top: 0; z-index: 20;
+    display: flex; gap: 3px; margin-top: 20px;
+    background: var(--ground);
+    border-bottom: 2px solid var(--hazard);
+    overflow-x: auto; scrollbar-width: none;
+  }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tabs button {
+    padding: 8px 16px 7px; white-space: nowrap; cursor: pointer;
+    background: var(--panel); color: var(--bone-dim);
+    border: 1px solid var(--line); border-bottom: none;
+    clip-path: polygon(8px 0, 100% 0, 100% 100%, 0 100%, 0 8px);
+    text-align: left;
+  }
+  .tabs button b {
+    display: block; font-family: var(--display); font-weight: 400;
+    font-size: 17px; letter-spacing: .12em; text-transform: uppercase; line-height: 1.1;
+  }
+  .tabs button span {
+    display: block; font-family: var(--mono); font-size: 9px; letter-spacing: .3em; opacity: .7;
+  }
+  .tabs button:hover { color: var(--bone); }
+  .tabs button.active {
+    color: var(--ground); background: var(--hazard);
+    border-color: var(--hazard); font-weight: 700;
+  }
+  .tabs button:focus-visible { outline: 2px solid var(--bone); outline-offset: -2px; }
+  .tab-panel { display: none; padding-top: 16px; }
+  .tab-panel.active { display: block; }
+
+  .label {
+    font-family: var(--mono); font-size: 11px; letter-spacing: .22em;
+    text-transform: uppercase; color: var(--bone-faint);
+  }
+  .hazard-tape {
+    height: 8px;
+    background: repeating-linear-gradient(-45deg, var(--hazard) 0 14px, #0e100a 14px 28px);
+    opacity: .85;
+  }
+
+  /* ---------- readiness hero ---------- */
+  .hero {
+    display: grid; grid-template-columns: 1fr 300px; gap: 0;
+    border: 1px solid var(--line); border-top: none; background: var(--panel);
+  }
+  @media (max-width: 760px) { .hero { grid-template-columns: 1fr; } }
+  .hero-main { padding: 26px 28px 30px; position: relative; overflow: hidden; }
+  .hero-main::before {
+    content: "☣"; position: absolute; right: -14px; top: -46px;
+    font-size: 250px; line-height: 1; color: rgba(232,161,60,.055);
+    pointer-events: none;
+  }
+  .hero-side { border-left: 1px solid var(--line); padding: 22px 24px; display: flex; flex-direction: column; gap: 6px; }
+  @media (max-width: 760px) { .hero-side { border-left: none; border-top: 1px solid var(--line); } }
+  .score-line { display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap; margin-top: 6px; }
+  .score {
+    font-family: var(--display); font-variant-numeric: tabular-nums;
+    font-size: clamp(72px, 13vw, 118px); font-weight: 400; line-height: .95;
+    color: var(--hazard);
+    text-shadow: 4px 4px 0 rgba(0,0,0,.55);
+  }
+  .score small { font-size: .34em; color: var(--blood); font-weight: 400; }
+  .rank {
+    display: inline-block;
+    font-size: clamp(17px, 3vw, 23px); font-weight: 900; letter-spacing: .1em;
+    color: var(--blood); border: 3px solid var(--blood);
+    padding: 3px 16px; transform: rotate(-4deg);
+    background: rgba(193,68,58,.05);
+    box-shadow: 0 0 0 2px rgba(193,68,58,.15);
+  }
+  .rank-note { color: var(--bone-dim); font-size: 13px; margin-top: 10px; max-width: 46ch; }
+  .meter { display: flex; gap: 5px; margin-top: 22px; }
+  .meter i { flex: 1; height: 16px; background: #262c1c; transition: background .4s; transform: skewX(-16deg); }
+  .meter i:nth-child(5n):not(:last-child) { margin-right: 9px; } /* ammo-clip grouping */
+  .meter i.on { background: var(--hazard); }
+  .meter i.half { background: color-mix(in srgb, var(--hazard) 45%, #2b3122); }
+  .side-stat { display: flex; justify-content: space-between; align-items: baseline; padding: 6px 0; border-bottom: 1px dashed var(--line); }
+  .side-stat:last-child { border-bottom: none; }
+  .side-stat b { font-family: var(--mono); font-size: 22px; font-variant-numeric: tabular-nums; }
+  .c-done b { color: var(--moss); }
+  .c-wip  b { color: var(--hazard); }
+  .c-none b { color: var(--bone-faint); }
+  .side-stat span { font-size: 12px; color: var(--bone-dim); }
+
+  /* ---------- avatar ---------- */
+  .avatar-box { display: flex; justify-content: center; padding: 6px 0 2px; }
+  #avatar { image-rendering: pixelated; }
+  .gear-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+  .gear {
+    font-family: var(--mono); font-size: 9.5px; letter-spacing: .04em;
+    padding: 3px 6px; border: 1px solid var(--line); color: var(--bone-faint);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .gear.on { color: var(--moss); border-color: var(--moss); }
+
+  /* ---------- duo cards (survival days / death cause) ---------- */
+  .duo { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 14px; }
+  @media (max-width: 700px) { .duo { grid-template-columns: 1fr; } }
+  .card { border: 1px solid var(--line); background: var(--panel); padding: 18px 20px; }
+  .card.blood { border-color: var(--blood); }
+  .big-days { font-family: var(--display); font-variant-numeric: tabular-nums; font-size: 56px; font-weight: 400; color: var(--hazard); line-height: 1.05; text-shadow: 3px 3px 0 rgba(0,0,0,.5); }
+  .big-days small { font-size: .35em; color: var(--bone-dim); font-weight: 400; }
+  .card p { margin: 8px 0 0; font-size: 13px; color: var(--bone-dim); }
+  .death-cause { font-size: 17px; font-weight: 800; color: var(--blood); margin-top: 6px; }
+
+  /* ---------- radar ---------- */
+  .radar-sec {
+    display: grid; grid-template-columns: 360px 1fr; gap: 0;
+    border: 1px solid var(--line); background: var(--panel-2); margin-top: 14px;
+  }
+  @media (max-width: 760px) { .radar-sec { grid-template-columns: 1fr; } }
+  .radar-box { padding: 20px; display: flex; align-items: center; justify-content: center; }
+  canvas { max-width: 100%; height: auto; }
+  .radar-desc { padding: 26px 28px; border-left: 1px solid var(--line); }
+  @media (max-width: 760px) { .radar-desc { border-left: none; border-top: 1px solid var(--line); } }
+  .radar-desc h2 { font-size: 18px; margin: 8px 0 10px; letter-spacing: .05em; }
+  .radar-desc p { font-size: 13.5px; color: var(--bone-dim); max-width: 52ch; margin: 0 0 14px; }
+  .weak-list { list-style: none; padding: 0; margin: 0; font-size: 13.5px; }
+  .weak-list li { display: flex; gap: 10px; align-items: baseline; padding: 6px 0; border-top: 1px dashed var(--line); }
+  .weak-list .tag { font-family: var(--mono); font-size: 10px; letter-spacing: .12em; color: var(--blood); border: 1px solid var(--blood); padding: 1px 6px; white-space: nowrap; }
+
+  /* ---------- skill tree ---------- */
+  .tree-head { margin: 8px 0 6px; display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 8px; }
+  .tree-head h2, .sec-title { font-size: 22px; letter-spacing: .06em; margin: 0; }
+  .hint { font-family: var(--mono); font-size: 11px; color: var(--bone-faint); letter-spacing: .08em; }
+  .cats { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; margin-top: 14px; }
+  .cat { border: 1px solid var(--line); background: var(--panel); }
+  .cat-head {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 12px 14px; border-bottom: 1px solid var(--line);
+    background: linear-gradient(180deg, rgba(232,161,60,.06), transparent);
+  }
+  .cat-head h3 { margin: 0; font-size: 15px; letter-spacing: .08em; }
+  .cat-head .en-sub { display: block; font-family: var(--mono); font-size: 9.5px; letter-spacing: .22em; color: var(--bone-faint); text-transform: uppercase; }
+  .cat-pct { font-family: var(--mono); font-size: 13px; color: var(--hazard); font-variant-numeric: tabular-nums; }
+  .skill {
+    display: flex; align-items: center; gap: 10px;
+    width: 100%; text-align: left; background: none; border: none;
+    border-top: 1px dashed var(--line);
+    padding: 10px 14px; cursor: pointer; color: var(--bone);
+    font-family: var(--sans); font-size: 13.5px;
+    transition: background .15s;
+  }
+  .skill:first-of-type { border-top: none; }
+  .skill:hover { background: rgba(232,161,60,.07); }
+  .skill:focus-visible { outline: 2px solid var(--hazard); outline-offset: -2px; }
+  .box {
+    width: 16px; height: 16px; flex: none; border: 1.5px solid var(--bone-faint);
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 11px; font-family: var(--mono);
+  }
+  .skill[data-st="2"] .box { border-color: var(--moss); background: var(--moss); color: #15180f; }
+  .skill[data-st="1"] .box { border-color: var(--hazard); color: var(--hazard); }
+  .skill-name { flex: 1; }
+  .skill[data-st="0"] .skill-name { color: var(--bone-dim); }
+  .st-chip { font-family: var(--mono); font-size: 10px; letter-spacing: .1em; padding: 2px 7px; white-space: nowrap; }
+  .skill[data-st="2"] .st-chip { color: var(--moss); border: 1px solid var(--moss); }
+  .skill[data-st="1"] .st-chip { color: var(--hazard); border: 1px solid var(--hazard); animation: blink 1.6s steps(2) infinite; }
+  .skill[data-st="0"] .st-chip { color: var(--bone-faint); border: 1px solid var(--line); }
+  @keyframes blink { 50% { opacity: .45; } }
+  @media (prefers-reduced-motion: reduce) { .skill[data-st="1"] .st-chip { animation: none; } }
+
+  /* ---------- skill detail drawer ---------- */
+  .skill .caret { font-size: 9px; color: var(--bone-faint); transition: transform .2s; flex: none; }
+  .skill.open { background: rgba(232,161,60,.07); }
+  .skill.open .caret { transform: rotate(180deg); color: var(--hazard); }
+  .skill-detail {
+    border-top: 1px dashed var(--line);
+    background: #12150c;
+    padding: 12px 14px 14px;
+    font-size: 12.5px;
+  }
+  .sd-use, .sd-how { margin: 0 0 9px; color: var(--bone-dim); line-height: 1.7; }
+  .sd-use b, .sd-how b {
+    display: inline-block; margin-right: 8px;
+    font-family: var(--mono); font-size: 10px; letter-spacing: .14em;
+    color: var(--hazard); border: 1px solid var(--hazard); padding: 0 6px;
+    white-space: nowrap;
+  }
+  .sd-meta { display: block; font-family: var(--mono); font-size: 10.5px; color: var(--bone-faint); letter-spacing: .06em; margin-top: 3px; }
+  .sd-lic { display: flex; gap: 6px; margin-top: 4px; }
+  .sd-lic-btn {
+    flex: 1; padding: 9px 6px; font-family: var(--sans); font-size: 12.5px; cursor: pointer;
+    background: none; border: 1px solid var(--line); color: var(--bone-dim);
+  }
+  .sd-lic-btn:hover { border-color: var(--bone-dim); }
+  .sd-lic-btn:focus-visible { outline: 2px solid var(--hazard); outline-offset: -2px; }
+  .sd-lic-btn.sel { background: var(--hazard); border-color: var(--hazard); color: #171204; font-weight: 700; }
+  .sd-lic-btn:last-child.sel { background: var(--moss); border-color: var(--moss); color: #10130a; }
+  .sd-lic-btn:first-child.sel { background: var(--bone-faint); border-color: var(--bone-faint); color: #15180f; }
+  .sd-crit { display: flex; flex-direction: column; gap: 3px; margin-top: 4px; }
+  .sd-crit-row {
+    display: flex; align-items: center; gap: 9px; text-align: left; cursor: pointer;
+    background: none; border: 1px solid transparent; padding: 6px 8px;
+    font-family: var(--sans); font-size: 12.5px; color: var(--bone-dim); line-height: 1.5;
+  }
+  .sd-crit-row:hover { border-color: var(--line); background: rgba(232,161,60,.05); }
+  .sd-crit-row:focus-visible { outline: 2px solid var(--hazard); outline-offset: -2px; }
+  .sd-crit-row .cb {
+    width: 15px; height: 15px; flex: none; border: 1.5px solid var(--bone-faint);
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+  .sd-crit-row .lvtag { font-family: var(--mono); font-size: 9.5px; color: var(--bone-faint); letter-spacing: .08em; flex: none; width: 30px; }
+  .sd-crit-row.done { color: var(--bone); }
+  .sd-crit-row.done .cb { background: var(--moss); border-color: var(--moss); }
+  .sd-crit-row.done .cb::after { content: "■"; font-size: 7px; color: #15180f; }
+  .sd-crit-row.done .lvtag { color: var(--moss); }
+
+  /* ---------- next targets ---------- */
+  .next-sec { margin-top: 28px; border: 2px dashed var(--hazard); background: var(--panel); }
+  .next-head { padding: 14px 18px; border-bottom: 1px solid var(--hazard);
+    background: repeating-linear-gradient(-45deg, rgba(232,161,60,.12) 0 10px, transparent 10px 20px); }
+  .next-head h2 { margin: 0; font-size: 18px; letter-spacing: .06em; }
+  .next-list { list-style: none; margin: 0; padding: 6px 18px 14px; }
+  .next-list li { display: flex; gap: 14px; align-items: baseline; padding: 12px 0; border-bottom: 1px dashed var(--line); }
+  .next-list li:last-child { border-bottom: none; }
+  .next-rank { font-family: var(--mono); font-size: 20px; color: var(--hazard); font-variant-numeric: tabular-nums; flex: none; }
+  .next-list b { font-size: 15px; }
+  .next-list p { margin: 2px 0 0; font-size: 13px; color: var(--bone-dim); max-width: 60ch; }
+
+  /* ---------- body metrics ---------- */
+  .metric { border: 1px solid var(--line); background: var(--panel); padding: 13px 16px; }
+  .metrics { display: grid; gap: 10px; margin-top: 14px; }
+  .m-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+  .m-name { font-size: 14px; font-weight: 700; }
+  .m-target { font-family: var(--mono); font-size: 10.5px; color: var(--bone-faint); letter-spacing: .08em; }
+  .m-ctrl { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
+  .m-ctrl input {
+    width: 84px; padding: 6px 8px; font-family: var(--mono); font-size: 15px;
+    background: #101208; color: var(--hazard); border: 1px solid var(--line);
+    font-variant-numeric: tabular-nums;
+  }
+  .m-ctrl input:focus-visible { outline: 2px solid var(--hazard); outline-offset: -1px; }
+  .m-unit { font-family: var(--mono); font-size: 11px; color: var(--bone-dim); width: 24px; }
+  .m-bar { flex: 1; height: 10px; background: #2b3122; }
+  .m-bar i { display: block; height: 100%; background: var(--hazard); width: 0; transition: width .3s; }
+  .m-pct { font-family: var(--mono); font-size: 12px; color: var(--bone-dim); width: 44px; text-align: right; font-variant-numeric: tabular-nums; }
+  .body-sum { margin-top: 16px; border: 1px solid var(--hazard); background: var(--panel); padding: 16px 20px; display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap; }
+  .body-sum b { font-family: var(--mono); font-size: 40px; color: var(--hazard); font-variant-numeric: tabular-nums; }
+  .body-sum span { font-size: 13px; color: var(--bone-dim); }
+
+  /* ---------- simulator ---------- */
+  .sim-box { border: 1px solid var(--line); background: #101208; padding: 18px; margin-top: 14px; }
+  .sim-log { font-family: var(--mono); font-size: 13px; line-height: 1.8; }
+  .sim-log p { margin: 0 0 12px; }
+  .sim-day { color: var(--hazard); letter-spacing: .18em; font-weight: 700; }
+  .sim-ok { color: var(--moss); }
+  .sim-ng { color: var(--blood); }
+  .sim-choices { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+  .sim-choices button {
+    text-align: left; font-family: var(--sans); font-size: 13.5px;
+    padding: 11px 14px; background: var(--panel-2); border: 1px solid var(--hazard);
+    color: var(--bone); cursor: pointer;
+  }
+  .sim-choices button:hover { background: rgba(232,161,60,.14); }
+  .sim-choices button .pct { font-family: var(--mono); font-size: 11px; color: var(--hazard); margin-left: 8px; }
+  .sim-restart {
+    margin-top: 14px; font-family: var(--mono); font-size: 12px; letter-spacing: .1em;
+    padding: 9px 16px; background: none; border: 1px solid var(--bone-faint);
+    color: var(--bone-dim); cursor: pointer;
+  }
+  .sim-restart:hover { color: var(--bone); border-color: var(--bone); }
+
+  /* ---------- roadmap ---------- */
+  .rm-cat { margin-top: 20px; border: 1px solid var(--line); background: var(--panel); }
+  .rm-cat h3 { margin: 0; padding: 11px 14px; font-size: 14px; letter-spacing: .08em; border-bottom: 1px solid var(--line); background: linear-gradient(180deg, rgba(232,161,60,.06), transparent); }
+  .rm-row { display: grid; grid-template-columns: 170px 120px 110px 1fr; gap: 10px; padding: 10px 14px; border-top: 1px dashed var(--line); font-size: 12.5px; align-items: baseline; }
+  .rm-row:first-of-type { border-top: none; }
+  @media (max-width: 700px) { .rm-row { grid-template-columns: 1fr 1fr; } .rm-how { grid-column: 1 / -1; } }
+  .rm-name { font-weight: 700; font-size: 13px; }
+  .rm-name .st { font-family: var(--mono); font-size: 9.5px; letter-spacing: .1em; padding: 1px 5px; margin-right: 6px; }
+  .rm-row[data-st="2"] { opacity: .45; }
+  .rm-row[data-st="2"] .st { color: var(--moss); border: 1px solid var(--moss); }
+  .rm-row[data-st="1"] .st { color: var(--hazard); border: 1px solid var(--hazard); }
+  .rm-row[data-st="0"] .st { color: var(--bone-faint); border: 1px solid var(--line); }
+  .rm-cost, .rm-time { font-family: var(--mono); font-size: 11.5px; color: var(--hazard); }
+  .rm-how { color: var(--bone-dim); }
+
+  /* ---------- achievements ---------- */
+  .ach-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 8px; margin-top: 14px; }
+  .ach {
+    text-align: left; border: 1px solid var(--line); background: var(--panel);
+    padding: 11px 13px; cursor: pointer; color: var(--bone-faint); font-family: var(--sans);
+  }
+  .ach:hover { border-color: var(--bone-faint); }
+  .ach b { display: block; font-size: 13.5px; color: inherit; }
+  .ach span { font-size: 11.5px; }
+  .ach.on { border-color: var(--hazard); color: var(--bone); background: linear-gradient(180deg, rgba(232,161,60,.08), transparent); }
+  .ach.on b { color: var(--hazard); }
+  .ach-sum { margin-top: 14px; font-family: var(--mono); font-size: 13px; color: var(--hazard); letter-spacing: .1em; }
+
+  /* ---------- growth chart ---------- */
+  .chart-box { border: 1px solid var(--line); background: var(--panel); padding: 16px; margin-top: 14px; }
+
+  .sec-gap { margin-top: 34px; }
+
+  /* ---------- tactical chamfers & headers ---------- */
+  .hero, .card, .cat, .next-sec, .sim-box, .rm-cat, .metric, .ach, .radar-sec, .chart-box, .zomcon {
+    clip-path: polygon(16px 0, 100% 0, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0 100%, 0 16px);
+  }
+  .sim-choices button { clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px); }
+  .sec-title, .tree-head h2 { border-left: 6px solid var(--blood); padding-left: 12px; }
+  .sec-title::before, .tree-head h2::before { content: "★ "; color: var(--hazard); }
+  /* crate corner brackets (on the two un-chamfered corners) */
+  .hero, .sim-box { position: relative; }
+  .hero::before, .sim-box::before {
+    content: ""; position: absolute; top: 8px; right: 8px; width: 26px; height: 26px;
+    border-top: 3px solid var(--hazard); border-right: 3px solid var(--hazard);
+    pointer-events: none; opacity: .7;
+  }
+  .hero::after, .sim-box::after {
+    content: ""; position: absolute; bottom: 8px; left: 8px; width: 26px; height: 26px;
+    border-bottom: 3px solid var(--hazard); border-left: 3px solid var(--hazard);
+    pointer-events: none; opacity: .7;
+  }
+  .alert-bar::after { content: "➤ ➤ ➤"; margin-left: auto; letter-spacing: .3em; font-size: 10px; }
+  .lead { font-size: 13.5px; color: var(--bone-dim); max-width: 64ch; margin: 6px 0 0; }
+
+  /* ---------- ZOMCON alert scale ---------- */
+  .zomcon { border: 1px solid var(--line); background: var(--panel); padding: 16px 18px 18px; margin-top: 14px; }
+  .zomcon-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .zomcon-now { font-family: var(--display); font-size: 24px; letter-spacing: .08em; }
+  .zomcon-now.z5 { color: #7fa8c9; }
+  .zomcon-now.z4 { color: #8fb35a; }
+  .zomcon-now.z3 { color: var(--hazard); }
+  .zomcon-now.z2 { color: #d96a5e; }
+  .zomcon-now.z1 { color: var(--bone); }
+  .zomcon-scale { display: flex; gap: 6px; margin-top: 12px; }
+  .zomcon-seg { flex: 1; padding: 9px 6px 10px; text-align: center; border: 1px solid var(--line); opacity: .28; transition: opacity .3s; }
+  .zomcon-seg b { display: block; font-family: var(--display); font-weight: 400; font-size: 27px; line-height: 1.1; }
+  .zomcon-seg span { font-family: var(--mono); font-size: 9.5px; letter-spacing: .22em; }
+  .zomcon-seg[data-level="5"] { color: #7fa8c9; border-color: #4a7fa5; }
+  .zomcon-seg[data-level="4"] { color: #8fb35a; border-color: #6a8f5a; }
+  .zomcon-seg[data-level="3"] { color: var(--hazard); border-color: var(--hazard); }
+  .zomcon-seg[data-level="2"] { color: #d96a5e; border-color: var(--blood); }
+  .zomcon-seg[data-level="1"] { color: var(--bone); border-color: var(--bone); }
+  .zomcon-seg.active { opacity: 1; }
+  .zomcon-seg.active[data-level="5"] { background: #4a7fa5; color: #0d1520; }
+  .zomcon-seg.active[data-level="4"] { background: #8fb35a; color: #10130a; }
+  .zomcon-seg.active[data-level="3"] { background: var(--hazard); color: #171204; }
+  .zomcon-seg.active[data-level="2"] { background: var(--blood); color: #f6ece9; }
+  .zomcon-seg.active[data-level="1"] { background: var(--bone); color: #16120a; animation: blink 1.2s steps(2) infinite; }
+  @media (prefers-reduced-motion: reduce) { .zomcon-seg.active[data-level="1"] { animation: none; } }
+
+  footer { margin-top: 40px; font-family: var(--mono); font-size: 11px; color: var(--bone-faint); letter-spacing: .1em; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; border-top: 1px solid var(--line); padding-top: 12px; }
+</style>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="theme-color" content="#101208">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="LAST MAN">
+</head>
+<body>
+
+
+<div class="wrap">
+  <div class="alert-bar"><i></i><span>Biohazard alert level 4 — Sapporo grid 43.06N / 141.35E — outbreak protocol active</span></div>
+
+  <div class="stamp-row">
+    <span>★ FILE No. 1994-CHIBA-SPK / SUBJECT: FUKUSHIMA YUTA / LOT 43-141</span>
+    <span class="red">CLASSIFIED</span>
+  </div>
+
+  <div class="eyebrow">Mil-Spec Survival Dossier — Est. 1994 — Sapporo, Hokkaido</div>
+  <h1><span class="en">The Last Man</span><span class="jp">最後の漢・福島勇太</span><span class="star-badge" aria-hidden="true"></span></h1>
+  <p class="subtitle">街がゾンビに呑まれた日、最後に立っている漢になる — 終末生存能力査定書。全データはこの端末に自動保存。</p>
+
+  <nav class="tabs" id="tabs">
+    <button data-tab="hq" class="active"><b>Assess</b><span>査定</span></button>
+    <button data-tab="skills"><b>Skills</b><span>スキル</span></button>
+    <button data-tab="body"><b>Physical</b><span>肉体</span></button>
+    <button data-tab="sim"><b>Simulator</b><span>シミュレーター</span></button>
+    <button data-tab="plan"><b>Ops Plan</b><span>作戦計画</span></button>
+    <button data-tab="log"><b>Records</b><span>記録</span></button>
+  </nav>
+
+  <!-- ================= 査定 ================= -->
+  <section class="tab-panel active" id="panel-hq">
+    <div class="hazard-tape"></div>
+    <section class="hero">
+      <div class="hero-main">
+        <span class="label">Survival Readiness — 総合生存指数（スキル6系統＋肉体）</span>
+        <div class="score-line">
+          <span class="score"><span id="scoreNum">0</span><small>%</small></span>
+          <div><div class="rank" id="rankName">—</div></div>
+        </div>
+        <div class="meter" id="meter"></div>
+        <p class="rank-note" id="rankNote"></p>
+      </div>
+      <div class="hero-side">
+        <span class="label">Survivor Avatar — 実体投影</span>
+        <div class="avatar-box"><canvas id="avatar" width="480" height="600" style="width:200px"></canvas></div>
+        <div class="gear-grid" id="gearGrid"></div>
+        <span class="label" style="margin-top:12px">Status Count</span>
+        <div class="side-stat c-done"><span>習得済み</span><b id="cntDone">0</b></div>
+        <div class="side-stat c-wip"><span>取得中</span><b id="cntWip">0</b></div>
+        <div class="side-stat c-none"><span>未習得</span><b id="cntNone">0</b></div>
+      </div>
+    </section>
+
+    <section class="zomcon">
+      <div class="zomcon-head">
+        <span class="label">Zombie Defense Condition — 警戒レベル</span>
+        <span class="zomcon-now" id="zomconNow"></span>
+      </div>
+      <div class="zomcon-scale">
+        <div class="zomcon-seg" data-level="5"><b>5</b><span>余裕</span></div>
+        <div class="zomcon-seg" data-level="4"><b>4</b><span>警戒</span></div>
+        <div class="zomcon-seg" data-level="3"><b>3</b><span>危険</span></div>
+        <div class="zomcon-seg" data-level="2"><b>2</b><span>重大</span></div>
+        <div class="zomcon-seg" data-level="1"><b>1</b><span>絶望</span></div>
+      </div>
+    </section>
+
+    <div class="duo">
+      <div class="card">
+        <span class="label">Estimated Survival — 推定生存日数</span>
+        <div class="big-days"><span id="daysNum">0</span><small> 日</small></div>
+        <p id="daysNote"></p>
+      </div>
+      <div class="card blood">
+        <span class="label" style="color:var(--blood)">Cause of Death — 死因診断</span>
+        <div class="death-cause" id="deathCause"></div>
+        <p id="deathNote"></p>
+      </div>
+    </div>
+
+    <section class="radar-sec">
+      <div class="radar-box">
+        <canvas id="radar" width="640" height="640" style="width:320px"></canvas>
+      </div>
+      <div class="radar-desc">
+        <span class="label">Combat Analysis — 戦力分析</span>
+        <h2>能力バランス</h2>
+        <p>スキル6系統＋肉体の7系統で査定。外周に近いほどその系統で生き残れる。ゾンビは弱点から入ってくる — へこんでいる系統が、終末当日の死因になる。</p>
+        <span class="label" style="color:var(--blood)">Weak Point — 現在の弱点系統</span>
+        <ul class="weak-list" id="weakList"></ul>
+      </div>
+    </section>
+  </section>
+
+  <!-- ================= スキル ================= -->
+  <section class="tab-panel" id="panel-skills">
+    <div class="tree-head">
+      <h2>スキルツリー</h2>
+      <span class="hint">クリックで詳細 ─ 資格はステータス選択 / 経験系はLV1-5チェックで数値化</span>
+    </div>
+    <div class="cats" id="cats"></div>
+
+    <section class="next-sec">
+      <div class="next-head"><h2>⚠ 次に取るべきスキル — 司令部推奨</h2></div>
+      <ol class="next-list" id="nextList"></ol>
+    </section>
+  </section>
+
+  <!-- ================= 肉体 ================= -->
+  <section class="tab-panel" id="panel-body">
+    <h2 class="sec-title">肉体査定 — PHYSICAL</h2>
+    <p class="lead">終末に持ち出せる最後の装備は自分の体。数値を入力すると「終末基準」に対する達成率で肉体スコアが算出され、総合指数・レーダー・アバターに反映される。</p>
+    <div class="metrics" id="metrics"></div>
+    <div class="body-sum">
+      <b><span id="bodyPct">0</span>%</b>
+      <span>肉体スコア — 終末基準に対する仕上がり。50%でアバターにフィジーク反映。</span>
+    </div>
+  </section>
+
+  <!-- ================= シミュレーター ================= -->
+  <section class="tab-panel" id="panel-sim">
+    <h2 class="sec-title">THE DAY シミュレーター</h2>
+    <p class="lead">札幌でアウトブレイクが発生した想定の生存シミュレーション。選択肢の成功率は<b>現在の実ステータス</b>で決まる。スキルと肉体を鍛えて再挑戦せよ。</p>
+    <div class="sim-box">
+      <div class="sim-log" id="simLog"></div>
+      <div class="sim-choices" id="simChoices"></div>
+      <button class="sim-restart" id="simRestart">▶ RESTART — DAY 0 からやり直す</button>
+    </div>
+  </section>
+
+  <!-- ================= 作戦計画 ================= -->
+  <section class="tab-panel" id="panel-plan">
+    <h2 class="sec-title">資格取得ロードマップ</h2>
+    <p class="lead">未修得スキルの入手経路・費用・所要期間。シミュレーターで死んだ系統から埋めるのが定石。習得済みはグレー表示。</p>
+    <div id="roadmap"></div>
+
+  </section>
+
+  <!-- ================= 記録 ================= -->
+  <section class="tab-panel" id="panel-log">
+    <h2 class="sec-title">実績 — 経験の勲章</h2>
+    <p class="lead">免許や数値では測れない「実戦経験」。達成したらクリックで解除。実績1つにつき推定生存日数 +3日。</p>
+    <div class="ach-grid" id="achGrid"></div>
+    <div class="ach-sum" id="achSum"></div>
+
+    <h2 class="sec-title sec-gap">成長ログ</h2>
+    <p class="lead">総合生存指数の推移。開くたびにその日の数値が自動記録される。</p>
+    <div class="chart-box">
+      <canvas id="growth" width="1800" height="480" style="width:100%"></canvas>
+    </div>
+  </section>
+
+  <footer>
+    <span>★ THE LAST MAN ★ MIL-SPEC SURVIVAL RECORD — EST. 1994</span>
+    <span>DATA SAVED LOCALLY — この端末のみに保存</span>
+  </footer>
+</div>
+
+<script>
+// ============================================================ data
+// lic: true = 資格系（lv 0=未取得 1=勉強中 2=取得済）
+// levels: 経験系のLV1〜5達成基準（lv 0〜5、チェックリストで数値化）
+const CATS = [
+  { key: "combat", name: "戦闘", en: "COMBAT", skills: [
+    { id: "hunt-license", name: "狩猟免許", lic: true, lv: 2, pr: 0, why: "",
+      use: "銃・罠の合法所持。終末前から山で実戦経験を積める唯一の入場券。" },
+    { id: "marksman", name: "射撃精度（実猟経験）", lv: 0, pr: 8, why: "免許は入場券。実際に山で獲物を仕留めた経験値が、動く標的＝ゾンビへの命中率を決める。",
+      use: "ゾンビ・獲物への命中率。1発で仕留める腕は弾薬＝寿命の節約。",
+      levels: ["射撃場デビュー（クレー/ライフル）", "定期的に射撃練習している", "実猟に同行して発砲経験", "獲物を単独で仕留めた", "動く標的に安定して命中する"] },
+    { id: "melee", name: "格闘・護身術", lv: 0, pr: 7, why: "弾は必ず切れる。ゼロ距離で組み付かれた時の3秒を生き延びる技術。",
+      use: "弾切れ・ゼロ距離戦の最後の砦。平時は護身と最強の運動習慣。",
+      levels: ["体験入門した", "ジムに月2回以上通っている", "6ヶ月継続・基本技を習得", "スパーリングで互角に動ける", "大会出場または帯昇格"] },
+    { id: "knife", name: "ナイフ・刃物術", lv: 0, pr: 4, why: "",
+      use: "解体・工作・調理・戦闘の万能ツール。刃物を自在に使える手は全系統に効く。",
+      levels: ["フィールドナイフを所持", "研ぎ・メンテが自分でできる", "フェザースティック等の加工", "バトニングで薪割り自在", "ナイフ1本で野営を設営できる"] },
+    { id: "bow", name: "弓・クロスボウ", lv: 0, pr: 3, why: "",
+      use: "静音武器。銃声で群れを呼ばずに狩る。矢は回収して再利用できる。",
+      levels: ["体験レッスンを受けた", "月1回以上練習している", "18mで的中率5割", "検定級位または大会出場", "移動する標的に命中する"] },
+  ]},
+  { key: "mobility", name: "機動", en: "MOBILITY", skills: [
+    { id: "car", name: "普通自動車免許", lic: true, lv: 2, pr: 0, why: "",
+      use: "物資輸送と長距離移動の基本。終末では動く倉庫兼シェルター。" },
+    { id: "bike", name: "大型二輪免許", lic: true, lv: 1, pr: 0, why: "",
+      use: "渋滞と瓦礫を無視できる機動力。低燃費で偵察・逃走の主力。" },
+    { id: "boat", name: "小型船舶操縦士", lic: true, lv: 0, pr: 9, why: "ゾンビは泳げない（定説）。海と川は最強の防衛線であり脱出路。北海道は海に囲まれている。",
+      use: "水上は無敵の安全地帯。島・対岸への脱出、漁による食料確保も。" },
+    { id: "offroad", name: "オフロード走破技術", lv: 0, pr: 5, why: "",
+      use: "道路が死んだ後の「道なき道」を進む技術。転倒しない体幹と車体操作。",
+      levels: ["未舗装路を走った", "林道ツーリング経験あり", "オフロードスクール受講", "悪路のスタックから自力脱出", "雪道・砂地・岩場に対応できる"] },
+    { id: "mechanic", name: "バイク・車両整備", lv: 0, pr: 6, why: "盗んだバイクは必ず壊れる。直せない奴から徒歩になる。",
+      use: "直せる者だけが機動力を維持できる。部品取り・応急修理は生命線。",
+      levels: ["洗車・チェーン注油をやる", "オイル交換が自分でできる", "タイヤ・ブレーキ交換ができる", "電装・キャブの不調に対応", "エンジン脱着・載せ替え経験"] },
+  ]},
+  { key: "shelter", name: "拠点", en: "SHELTER", skills: [
+    { id: "architect", name: "二級建築士", lic: true, lv: 2, pr: 0, why: "",
+      use: "拠点の構造・耐久・動線を設計できる目。籠城戦の司令塔スキル。" },
+    { id: "carpentry", name: "大工・DIY実技", lv: 0, pr: 5, why: "",
+      use: "設計を現物にする手。バリケード施工・拠点補修・家具武装化。",
+      levels: ["棚・家具を作った", "電動工具一式を使える", "壁・床の造作ができる", "小屋を1棟建てた", "住める構造物を独力で建てられる"] },
+    { id: "electric", name: "第二種電気工事士", lic: true, lv: 0, pr: 9, why: "設計できても電気が引けない拠点は夜に死ぬ。建築士との組み合わせで拠点構築が完結する。",
+      use: "拠点の電源・照明・ソーラー配線。平時は副業になる国家資格。" },
+    { id: "welding", name: "溶接（アーク溶接特別教育）", lic: true, lv: 0, pr: 4, why: "",
+      use: "金属補強・車両の装甲化・柵の製作。木造の3倍頑丈な拠点に。" },
+    { id: "barricade", name: "防衛設計・バリケード構築", lv: 0, pr: 3, why: "",
+      use: "侵入経路を先読みして塞ぐ防衛知能。建築士知識の終末転用。",
+      levels: ["防犯・防衛設計の書籍を読了", "自宅の侵入弱点を診断した", "補強プランを図面化した", "実際に補強を施工した", "第三者の侵入テストに耐えた"] },
+  ]},
+  { key: "food", name: "糧食", en: "FOOD", skills: [
+    { id: "butcher", name: "解体・精肉技術", lv: 0, pr: 8, why: "撃てても捌けなければ肉は腐る。狩猟免許の価値を10倍にする隣接スキル。",
+      use: "獲物を食料に変える変換器。狩猟免許とセットで完成する。",
+      levels: ["解体を見学した", "講習で部分解体を経験", "補助付きでシカ1頭を捌いた", "単独でフル解体できる", "制限時間内に精肉まで完了"] },
+    { id: "fishing", name: "釣り・漁労", lv: 0, pr: 5, why: "",
+      use: "最も低リスクで動物性タンパクを継続確保。弾薬を使わない狩り。",
+      levels: ["釣具一式を所有", "月1回釣行・釣果あり", "複数の釣法を使い分ける", "四季を通して釣果が安定", "仕掛け自作で量産できる"] },
+    { id: "forage", name: "山菜・キノコ判別", lv: 0, pr: 6, why: "北海道の山は食料庫。ただし誤判別は即死。",
+      use: "山を食料庫に変える判別眼。ただし誤判別は毒＝即死のハイリスク。",
+      levels: ["図鑑を持って山に入った", "観察会に参加した", "可食10種を判別できる", "毒種との見分けを説明できる", "30種判別・四季に対応"] },
+    { id: "farming", name: "農業・家庭菜園", lv: 0, pr: 4, why: "",
+      use: "長期戦の食料自給。備蓄は必ず尽きるが、畑は毎年実る。",
+      levels: ["プランター栽培をした", "市民農園を1シーズン運営", "主食級（芋・豆）を収穫", "年間計画で連作している", "保存まで回る菜園を運営"] },
+    { id: "preserve", name: "燻製・保存食製作", lv: 0, pr: 5, why: "",
+      use: "食料を時間軸で運用する技術。北海道の冬越しの生命線。",
+      levels: ["干し野菜・梅干し等を作った", "燻製器で定期的に燻製", "瓶詰め・脱気保存ができる", "獲った肉を長期保存できる", "ひと冬分の備蓄を製造できる"] },
+  ]},
+  { key: "lifeline", name: "生命維持", en: "LIFELINE", skills: [
+    { id: "firstaid", name: "救命講習（上級救命）", lic: true, lv: 0, pr: 10, why: "消防署で受講可・ほぼ無料・1日で取れる。仲間の止血ができない男に、仲間はついてこない。最優先。",
+      use: "止血・心肺蘇生・搬送。自分と仲間の「即死」を「怪我」に変える。" },
+    { id: "wound", name: "縫合・外傷ケア", lv: 0, pr: 6, why: "",
+      use: "病院なき世界の外傷管理。小さな傷の化膿が一番人を殺す。",
+      levels: ["救急箱を整備し中身を使える", "止血帯・圧迫止血を練習した", "WFA（野外救急法）を受講", "実地で外傷処置の経験", "縫合・固定を人に指導できる"] },
+    { id: "water", name: "浄水・水源確保", lv: 0, pr: 7, why: "人間は水なしで3日。ゾンビより先に脱水が来る。",
+      use: "飲水の自給。脱水はゾンビより速く、確実に殺しに来る。",
+      levels: ["携帯浄水器を所有", "煮沸・消毒の知識がある", "登山・キャンプで実運用した", "濁水から飲水を作れる", "雨水・雪から安定供給を設計"] },
+    { id: "fire", name: "火起こし・火力管理", lv: 0, pr: 4, why: "",
+      use: "暖・調理・煮沸消毒・合図。文明を再起動する火種。",
+      levels: ["焚き火を定期的にしている", "メタルマッチで着火できる", "雨天でも着火できる", "摩擦式（原始火起こし）成功", "雪中で一晩火力を維持した"] },
+    { id: "herbs", name: "薬草・民間医療知識", lv: 0, pr: 2, why: "",
+      use: "薬局なき世界の薬箱。山菜判別と同じ山で同時に学べる。",
+      levels: ["薬草図鑑を所有", "観察会に参加した", "5種を用途込みで使える", "15種・外用内用を使い分け", "症状から処方を組める"] },
+  ]},
+  { key: "tactics", name: "知略", en: "TACTICS", skills: [
+    { id: "radio", name: "アマチュア無線技士", lic: true, lv: 0, pr: 9, why: "電話網が死んだ日、生存者同士を繋ぐ唯一の回線。国家資格で4級なら独学2週間。",
+      use: "電話網死後の唯一の通信手段。情報の有無がそのまま生存率。" },
+    { id: "map", name: "読図・コンパスナビ", lv: 0, pr: 6, why: "GPSが死んだ日のために。狩猟と登山にそのまま効く。",
+      use: "GPS死後のナビゲーション。狩猟・登山・脱出行すべての土台。",
+      levels: ["紙地図とコンパスを所有", "読図講習を受講", "GPSなしで登山行動できる", "藪山でルート設計できる", "夜間・悪天でも現在地を維持"] },
+    { id: "weather", name: "天候予測", lv: 0, pr: 3, why: "",
+      use: "行動計画の精度を決める。悪天は終末世界の第二の敵。",
+      levels: ["観天望気の基礎を知っている", "天気図が読める", "山の天気を半日先まで予測", "局地予測がだいたい当たる", "気圧計と空だけで行動判断"] },
+    { id: "rope", name: "ロープワーク", lv: 0, pr: 5, why: "",
+      use: "拠点構築・荷締め・救助・登下降の基盤技術。手が覚えた結びは裏切らない。",
+      levels: ["8の字・もやい結びができる", "10種の結びを使い分ける", "クライミングジムに通った", "懸垂下降ができる", "救助システムを構築できる"] },
+    { id: "leader", name: "統率・交渉術", lv: 0, pr: 7, why: "終末で一番危険なのはゾンビではなく人間。経営者スキルが最終盤で効いてくる。",
+      use: "人間が最大の脅威にして最大の資源。群れを率い、物々交換を制す。",
+      levels: ["チーム運営の経験がある", "人を雇用し組織を回している", "交渉で条件を勝ち取った実績", "危機対応の意思決定経験", "組織を黒字で継続させている"] },
+  ]},
+];
+
+const clamp01 = x => Math.max(0, Math.min(1, x));
+
+const BODY = [
+  { id: "bf",     name: "体脂肪率",         unit: "%",  target: "終末基準 8〜15%",   step: "0.1", score: v => v <= 0 ? 0 : clamp01(1 - Math.max(0, v - 15) * 0.06 - Math.max(0, 8 - v) * 0.12) },
+  { id: "bench",  name: "ベンチプレスMAX",  unit: "kg", target: "終末基準 100kg",    step: "2.5", score: v => clamp01(v / 100) },
+  { id: "squat",  name: "スクワットMAX",    unit: "kg", target: "終末基準 140kg",    step: "2.5", score: v => clamp01(v / 140) },
+  { id: "dead",   name: "デッドリフトMAX",  unit: "kg", target: "終末基準 160kg",    step: "2.5", score: v => clamp01(v / 160) },
+  { id: "pullup", name: "懸垂（連続）",     unit: "回", target: "終末基準 15回",     step: "1",   score: v => clamp01(v / 15) },
+  { id: "run5k",  name: "5km走タイム",      unit: "分", target: "終末基準 25分以内", step: "0.5", score: v => v <= 0 ? 0 : clamp01((40 - v) / 15) },
+  { id: "grip",   name: "握力",             unit: "kg", target: "終末基準 60kg",     step: "1",   score: v => clamp01(v / 60) },
+];
+
+const GEAR = [
+  { cat: "combat",   label: "ライフル" },
+  { cat: "mobility", label: "ヘルメット" },
+  { cat: "shelter",  label: "工具ベルト" },
+  { cat: "food",     label: "バックパック" },
+  { cat: "lifeline", label: "救急ポーチ" },
+  { cat: "tactics",  label: "無線機" },
+  { cat: "body",     label: "フィジーク", th: 0.5 },
+];
+const GEAR_TH = 0.3;
+
+const RANKS = [
+  [0,  "一般市民", "感染初日にモブとして退場するタイプ。まだ間に合う。"],
+  [15, "生存志願者", "生き残る意思はある。だが意思だけでは噛まれる。"],
+  [30, "サバイバー", "初動の混乱は越えられる。問題は3ヶ月後の冬。"],
+  [50, "ウォーカーハンター", "ゾンビを狩る側に回った。拠点に人が集まり始める。"],
+  [70, "終末の請負人", "生存者コミュニティの中核。あなたの拠点が北の砦になる。"],
+  [90, "終末を統べる漢", "ゾンビの方が避けて通るレベル。その日が来るのを半分楽しみにしている。"],
+];
+
+const DEATH = {
+  combat:   ["接近戦での噛傷", "弾が切れた。素手で戦う訓練をしていなかった。"],
+  mobility: ["市街地で包囲", "移動手段を失い、群れの中心で立ち往生した。"],
+  shelter:  ["夜間の拠点陥落", "防備の甘い窓が一枚あった。設計は良かったのに施工が甘かった。"],
+  food:     ["餓死または誤食", "備蓄が尽きた3週目、判別できない毒キノコに手を出した。"],
+  lifeline: ["小さな傷の感染症", "ゾンビにやられたのではない。転んだ時の擦り傷が化膿した。"],
+  tactics:  ["孤立死", "無線があれば3km先の生存者拠点に合流できていた。"],
+  body:     ["体力切れ", "逃げ足が3分持たなかった。終末で最初に試されるのは心肺機能。"],
+};
+
+const ROADMAP = {
+  "hunt-license": { cost: "約5〜9万円", time: "2〜3ヶ月", how: "都道府県の狩猟免許試験＋銃所持許可（初心者講習→教習射撃）。取得済" },
+  "car":      { cost: "取得済", time: "—", how: "教習所。維持は更新のみ" },
+  "bike":     { cost: "約10〜15万円", time: "1〜2ヶ月", how: "教習所の大型二輪コース（現在教習中）" },
+  "architect":{ cost: "取得済", time: "—", how: "資格保有。実務と拠点設計の妄想で維持" },
+  "marksman": { cost: "数千円/回", time: "継続", how: "射撃場での実弾訓練＋先輩ハンターの猟に同行して実戦経験を積む" },
+  "melee":    { cost: "月約1万円", time: "6ヶ月〜", how: "キックボクシング/ブラジリアン柔術ジム。札幌市内に多数" },
+  "knife":    { cost: "1〜3万円", time: "1日講習", how: "ブッシュクラフト講習＋フィールドナイフの日常メンテ" },
+  "bow":      { cost: "月数千円", time: "3ヶ月〜", how: "アーチェリー場/弓道教室。静音武器は対ゾンビ最適解" },
+  "boat":     { cost: "約10〜13万円", time: "最短2日", how: "小型船舶2級・国家試験免除コース（小樽/石狩で受講可）" },
+  "offroad":  { cost: "2〜3万円/回", time: "1日〜", how: "オフロードスクール受講＋道内林道ツーリングで実践" },
+  "mechanic": { cost: "教材数千円", time: "3ヶ月", how: "整備入門書＋自分のバイクのオイル/チェーン/タイヤ交換を全部自分でやる" },
+  "carpentry":{ cost: "材料費のみ", time: "継続", how: "小屋や家具を実際に建てるDIY実践。建築士の知識を手に落とす" },
+  "electric": { cost: "受験料9,300円＋教材約2万円", time: "独学3ヶ月", how: "第二種電気工事士。筆記＋技能試験、年2回。副業にも直結" },
+  "welding":  { cost: "約1.5万円", time: "2〜3日", how: "アーク溶接特別教育（労働局登録の教習機関で受講）" },
+  "barricade":{ cost: "0円", time: "1週間", how: "建築士知識の応用。防犯設計・要塞化の独学研究＋自宅で試作" },
+  "butcher":  { cost: "無料〜数千円", time: "1日〜", how: "北海道の狩猟者向けエゾシカ解体講習会。道内は開催多数" },
+  "fishing":  { cost: "道具3〜5万円", time: "継続", how: "小樽・石狩湾でルアー/船釣り。船舶免許と相性抜群" },
+  "forage":   { cost: "図鑑＋数千円", time: "1シーズン", how: "きのこの会・山菜観察会に参加。独学判別は死ぬので必ず有識者と" },
+  "farming":  { cost: "年数千円", time: "1シーズン", how: "市民農園を借りてジャガイモ・豆類から。北海道の土は優秀" },
+  "preserve": { cost: "燻製器約2万円", time: "継続", how: "自宅で燻製＋乾燥野菜＋瓶詰め。獲った肉の保存に直結" },
+  "firstaid": { cost: "無料", time: "1日（8時間）", how: "札幌市消防局の上級救命講習。全項目中コスパ最強、最優先" },
+  "wound":    { cost: "3〜4万円", time: "2日", how: "WFA（野外・災害救急法）講習。止血・固定・搬送を極める" },
+  "water":    { cost: "浄水器1〜2万円", time: "1日", how: "携帯浄水器＋煮沸/消毒の知識。登山で実運用して確かめる" },
+  "fire":     { cost: "数千円", time: "練習のみ", how: "メタルマッチ/摩擦式着火。雨天でも起こせるまで練習" },
+  "herbs":    { cost: "書籍数千円", time: "継続", how: "薬草観察会＋北海道の薬草図鑑。山菜判別と同時に学べる" },
+  "radio":    { cost: "試験約5,100円", time: "独学2週間", how: "アマチュア無線4級。確実に行くなら2日講習（約2.3万円）" },
+  "map":      { cost: "数千円", time: "1日講習＋実践", how: "登山の読図講習。狩猟の山行にそのまま効く" },
+  "weather":  { cost: "書籍数千円", time: "継続", how: "山岳気象・観天望気の独学＋登山で答え合わせ" },
+  "rope":     { cost: "月約1万円", time: "3ヶ月", how: "クライミングジム＋基本の8結びを体に入れる" },
+  "leader":   { cost: "0円", time: "実践中", how: "経営で実践済みのはず。終末では物々交換の交渉術に転用" },
+};
+
+const ACH = [
+  { id: "first-game",   name: "初獲物",       desc: "狩猟で初めて獲物を仕留めた" },
+  { id: "butcher-exp",  name: "血の儀式",     desc: "獲物を自分の手で解体した" },
+  { id: "solo-camp",    name: "単独野営",     desc: "ソロキャンプで一夜を明かした" },
+  { id: "winter-camp",  name: "冬将軍",       desc: "北海道の冬に野営した" },
+  { id: "long-ride",    name: "長距離機動",   desc: "1日300km以上ツーリングした" },
+  { id: "bear",         name: "ヒグマ遭遇",   desc: "熊と遭遇して生還した" },
+  { id: "march",        name: "強行軍",       desc: "20km以上を徒歩で歩き切った" },
+  { id: "fire-nolighter", name: "プロメテウス", desc: "ライター無しで火を起こした" },
+  { id: "catch-eat",    name: "自給自足",     desc: "釣った/獲った/採った物だけで一食作った" },
+  { id: "blackout",     name: "停電の夜",     desc: "電気なしで一晩過ごした" },
+  { id: "bench100",     name: "漢の三桁",     desc: "ベンチプレス100kgを挙げた" },
+  { id: "away-day",     name: "異邦の漢",     desc: "旅行先で「今ここで起きたらどう動くか」の脱出経路を立てた" },
+];
+const ACH_BONUS = 3; // days per achievement
+
+const EVENTS = [
+  { day: 0, text: "DAY 0 — 札幌中心部でアウトブレイク発生。道路は麻痺し始め、街に悲鳴が満ちる。最初の決断が生死を分ける。", choices: [
+    { label: "バイクで郊外へ離脱する", cat: "mobility", ok: "渋滞の隙間を縫って市街地を離脱。機動力が命を救った。", ng: "すすきの交差点で群れに囲まれた。バイクは倒れ、それまでだった。" },
+    { label: "自宅を要塞化して籠城する", cat: "shelter", ok: "窓を補強し出入口を封鎖。初動の混乱をやり過ごした。", ng: "バリケードは一晩持たなかった。窓の補強が一枚甘かった。" },
+    { label: "徒歩で人混みを突破する", cat: "body", ok: "体力に物を言わせて3km を走り抜けた。日頃の鍛錬が効いた。", ng: "3ブロック先で息が上がった。心肺機能が足りなかった。" },
+  ]},
+  { day: 3, text: "DAY 3 — 断水。手持ちの水が尽きた。近くには濁った川と、ゾンビがうろつくスーパーがある。", choices: [
+    { label: "川の水を浄水して飲む", cat: "lifeline", ok: "煮沸と濾過で安全な水を確保。水問題を恒久的に解決した。", ng: "処理が不十分だった。激しい下痢と脱水で動けなくなった。" },
+    { label: "スーパーに突入して物資を奪取", cat: "combat", ok: "3体を静かに処理し、水とガスボンベを回収した。", ng: "バックヤードに潜んでいた群れに気づかなかった。" },
+  ]},
+  { day: 7, text: "DAY 7 — 食料が尽きかけている。缶詰はあと2食分。山は近い。", choices: [
+    { label: "山に入り獲物を狩る", cat: "combat", ok: "エゾシカを仕留めた。数週間分のタンパク質を確保。", ng: "獲物を追って深追いし、崖で足を滑らせた。", },
+    { label: "山菜・キノコを採取する", cat: "food", ok: "行者ニンニクと安全なキノコを見分けて採取。糧食が安定した。", ng: "似ていた。ツキヨタケとムキタケの区別がつかなかった。" },
+    { label: "川で魚を獲る", cat: "food", ok: "仕掛けと釣りでニジマスを量産。保存分まで確保した。", ng: "釣果ゼロのまま体力だけを消耗し、衰弱した。" },
+  ]},
+  { day: 14, text: "DAY 14 — 夜、拠点の周囲に群れが集まり始めた。数は20体以上。朝までに決断が要る。", choices: [
+    { label: "バリケードを強化して耐える", cat: "shelter", ok: "二重の防壁が持ちこたえた。群れは朝に散った。", ng: "物量に押し負けた。建物ごと放棄する羽目になり、逃げ遅れた。" },
+    { label: "夜陰に乗じてバイクで移転する", cat: "mobility", ok: "エンジン音で数体釣りながらも、闇夜の国道を抜けた。", ng: "暗闇でスリップ。音に群れが集まってきた。" },
+    { label: "高所から各個撃破する", cat: "combat", ok: "屋根から一体ずつ処理。弾は惜しいが安全を買った。", ng: "銃声がさらなる群れを呼んだ。弾が先に尽きた。" },
+  ]},
+  { day: 21, text: "DAY 21 — 瓦礫の撤去中に深い切り傷を負った。出血が止まらない。病院はもう機能していない。", choices: [
+    { label: "自分で止血・処置する", cat: "lifeline", ok: "圧迫止血と消毒、固定まで完璧に処置。3日で回復した。", ng: "処置が甘かった。傷口は化膿し、高熱が引かなかった。" },
+    { label: "気合で治るまで放置する", cat: "body", ok: "驚異の自然治癒力で乗り切った。漢の体は資本である。", ng: "気合では細菌に勝てなかった。敗血症だった。" },
+  ]},
+  { day: 40, text: "DAY 40 — 初雪。北海道の冬が来る。今の拠点は断熱も暖房も不十分。氷点下20度が迫る。", choices: [
+    { label: "越冬拠点を自力で構築する", cat: "shelter", ok: "断熱改修と薪ストーブ導入。建築士の本領発揮だった。", ng: "隙間風を甘く見た。燃料が尽きた夜、気温は-18度だった。" },
+    { label: "備蓄と装備で乗り切る", cat: "food", ok: "保存食と燃料の計画運用で冬を凌ぎ切った。", ng: "2月、備蓄が底をついた。雪の中に食料はなかった。" },
+  ]},
+  { day: 60, text: "DAY 60 — 武装した生存者グループと遭遇。物資は豊富だが、こちらを警戒している。銃口がこちらを向く。", choices: [
+    { label: "交渉して同盟を結ぶ", cat: "tactics", ok: "解体技術と医療知識を売り込み、対等な同盟を締結した。", ng: "言葉を間違えた。彼らは略奪者だった。" },
+    { label: "威嚇して立ち去らせる", cat: "combat", ok: "隙のない構えに相手が引いた。戦わずして勝った。", ng: "先に撃たれた。数が違いすぎた。" },
+  ]},
+  { day: 90, text: "DAY 90 — ノイズ混じりの電波を拾った。自衛隊が生存者の集結地点を放送しているらしい。座標の特定が必要だ。", choices: [
+    { label: "無線で交信し座標を特定する", cat: "tactics", ok: "コールサインを交わし、正確な集結地点を得た。", ng: "周波数を合わせられなかった。放送は3日後に途絶えた。" },
+    { label: "電波の方角へ勘で移動する", cat: "mobility", ok: "地形を読み切り、3日かけて集結地点に到達した。", ng: "方向が90度ズレていた。燃料は帰り分を残していなかった。" },
+  ]},
+];
+
+// ============================================================ storage
+const KEY  = "the-day-skills-v1";
+const KEY2 = "the-day-skills-v2";
+const KEYB = "the-day-body-v1";
+const KEYA = "the-day-ach-v1";
+const KEYH = "the-day-history-v1";
+const KEYT = "the-day-tab-v1";
+
+const load = (k, def) => { try { return JSON.parse(localStorage.getItem(k)) ?? def; } catch (e) { return def; } };
+const store = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} };
+
+// v2: lv保存。v2が無ければ旧v1(st)から移行（経験系: 取得中→LV2, 習得済→LV4）
+const savedV2 = load(KEY2, null);
+const savedV1 = load(KEY, {});
+CATS.forEach(c => c.skills.forEach(s => {
+  if (savedV2 && savedV2[s.id] !== undefined) s.lv = savedV2[s.id];
+  else if (!savedV2 && savedV1[s.id] !== undefined) {
+    const st = savedV1[s.id];
+    s.lv = s.lic ? st : ([0, 2, 4][st] ?? 0);
+  }
+  s.st = computeSt(s);
+}));
+let bodyVals = load(KEYB, {});
+let achState = load(KEYA, {});
+let history  = load(KEYH, []);
+
+function saveSkills() {
+  const out = {};
+  CATS.forEach(c => c.skills.forEach(s => out[s.id] = s.lv));
+  store(KEY2, out);
+}
+
+// ============================================================ scoring
+// 資格系: lv/2、経験系: lv/5 → 0〜1のスコア
+function skillScore(s) { return s.lic ? s.lv / 2 : s.lv / 5; }
+function computeSt(s) { return s.lv === 0 ? 0 : skillScore(s) >= 0.8 ? 2 : 1; }
+function catScore(cat) {
+  return cat.skills.reduce((a, s) => a + skillScore(s), 0) / cat.skills.length;
+}
+function bodyScore() {
+  let v = 0;
+  BODY.forEach(m => v += m.score(Number(bodyVals[m.id]) || 0));
+  return v / BODY.length;
+}
+function spokes() {
+  return [
+    ...CATS.map(c => ({ key: c.key, name: c.name, score: catScore(c) })),
+    { key: "body", name: "肉体", score: bodyScore() },
+  ];
+}
+function totalScore() {
+  const sp = spokes();
+  return sp.reduce((a, s) => a + s.score, 0) / sp.length;
+}
+const achCount = () => ACH.filter(a => achState[a.id]).length;
+
+// ============================================================ tabs
+const tabsEl = document.getElementById("tabs");
+function showTab(name) {
+  document.querySelectorAll(".tab-panel").forEach(p => p.classList.toggle("active", p.id === "panel-" + name));
+  tabsEl.querySelectorAll("button").forEach(b => b.classList.toggle("active", b.dataset.tab === name));
+  store(KEYT, name);
+}
+tabsEl.addEventListener("click", e => {
+  const b = e.target.closest("button[data-tab]");
+  if (b) showTab(b.dataset.tab);
+});
+
+// ============================================================ build: skill tree
+const catsEl = document.getElementById("cats");
+CATS.forEach(cat => {
+  const div = document.createElement("div");
+  div.className = "cat";
+  div.innerHTML = `<div class="cat-head"><h3>${cat.name}<span class="en-sub">${cat.en}</span></h3><span class="cat-pct" id="pct-${cat.key}"></span></div>`;
+  cat.skills.forEach(s => {
+    const btn = document.createElement("button");
+    btn.className = "skill";
+    btn.innerHTML = `<span class="box"></span><span class="skill-name">${s.name}</span><span class="st-chip"></span><span class="caret">▼</span>`;
+
+    const det = document.createElement("div");
+    det.className = "skill-detail";
+    det.hidden = true;
+    const r = ROADMAP[s.id];
+    let inner = `<p class="sd-use"><b>何に生きる</b>${s.use}</p>`;
+    if (r) inner += `<p class="sd-how"><b>取得ルート</b>${r.how}<span class="sd-meta">費用: ${r.cost} ／ 期間: ${r.time}</span></p>`;
+    if (s.lic) {
+      inner += `<div class="sd-lic">` +
+        ["未取得", "勉強中", "取得済"].map((t, i) =>
+          `<button class="sd-lic-btn" data-lv="${i}">${t}</button>`).join("") +
+        `</div>`;
+    } else {
+      inner += `<div class="sd-crit">` +
+        s.levels.map((t, i) =>
+          `<button class="sd-crit-row" data-lv="${i + 1}"><span class="cb"></span><span class="lvtag">LV${i + 1}</span><span>${t}</span></button>`).join("") +
+        `</div>`;
+    }
+    det.innerHTML = inner;
+    det.querySelectorAll("[data-lv]").forEach(b => {
+      b.addEventListener("click", () => {
+        const L = Number(b.dataset.lv);
+        if (s.lic) s.lv = L;
+        else s.lv = s.lv >= L ? L - 1 : L; // チェックリスト式: 到達済みを押すと1つ戻る
+        s.st = computeSt(s);
+        saveSkills();
+        render();
+      });
+    });
+    btn.addEventListener("click", () => {
+      det.hidden = !det.hidden;
+      btn.classList.toggle("open", !det.hidden);
+    });
+
+    s._el = btn;
+    s._det = det;
+    div.appendChild(btn);
+    div.appendChild(det);
+  });
+  catsEl.appendChild(div);
+});
+
+// ============================================================ build: body metrics
+const metricsEl = document.getElementById("metrics");
+BODY.forEach(m => {
+  const div = document.createElement("div");
+  div.className = "metric";
+  div.innerHTML = `
+    <div class="m-head"><span class="m-name">${m.name}</span><span class="m-target">${m.target}</span></div>
+    <div class="m-ctrl">
+      <input type="number" min="0" step="${m.step}" id="bm-${m.id}" value="${bodyVals[m.id] ?? ""}" aria-label="${m.name}">
+      <span class="m-unit">${m.unit}</span>
+      <div class="m-bar"><i id="bar-${m.id}"></i></div>
+      <span class="m-pct" id="mp-${m.id}">0%</span>
+    </div>`;
+  metricsEl.appendChild(div);
+  div.querySelector("input").addEventListener("input", e => {
+    bodyVals[m.id] = e.target.value === "" ? 0 : Number(e.target.value);
+    store(KEYB, bodyVals);
+    render();
+  });
+});
+
+// ============================================================ build: achievements
+const achGrid = document.getElementById("achGrid");
+ACH.forEach(a => {
+  const btn = document.createElement("button");
+  btn.className = "ach";
+  btn.innerHTML = `<b>${a.name}</b><span>${a.desc}</span>`;
+  btn.addEventListener("click", () => {
+    achState[a.id] = !achState[a.id];
+    store(KEYA, achState);
+    render();
+  });
+  a._el = btn;
+  achGrid.appendChild(btn);
+});
+
+// ============================================================ build: meter
+const meterEl = document.getElementById("meter");
+for (let i = 0; i < 20; i++) meterEl.appendChild(document.createElement("i"));
+
+const STLABEL = ["未習得", "取得中", "習得済"];
+const STBOX = ["", "◐", "■"];
+
+// ============================================================ render
+function render() {
+  // skill tree
+  let done = 0, wip = 0, none = 0;
+  CATS.forEach(c => c.skills.forEach(s => {
+    s.st = computeSt(s);
+    s._el.dataset.st = s.st;
+    s._el.querySelector(".box").textContent = STBOX[s.st];
+    const chip = s.lic ? ["未取得", "勉強中", "取得済"][s.lv] : "LV" + s.lv;
+    s._el.querySelector(".st-chip").textContent = chip;
+    s._el.setAttribute("aria-label", `${s.name}: ${chip}。クリックで詳細を開閉`);
+    if (s.lic) {
+      s._det.querySelectorAll(".sd-lic-btn").forEach((b, i) =>
+        b.classList.toggle("sel", i === s.lv));
+    } else {
+      s._det.querySelectorAll(".sd-crit-row").forEach((b, i) =>
+        b.classList.toggle("done", i + 1 <= s.lv));
+    }
+    if (s.st === 2) done++; else if (s.st === 1) wip++; else none++;
+  }));
+  CATS.forEach(c => {
+    document.getElementById("pct-" + c.key).textContent = Math.round(catScore(c) * 100) + "%";
+  });
+  document.getElementById("cntDone").textContent = done;
+  document.getElementById("cntWip").textContent = wip;
+  document.getElementById("cntNone").textContent = none;
+
+  // total & rank
+  const total = totalScore();
+  const pct = Math.round(total * 100);
+  document.getElementById("scoreNum").textContent = pct;
+  let rank = RANKS[0];
+  RANKS.forEach(r => { if (pct >= r[0]) rank = r; });
+  document.getElementById("rankName").textContent = "RANK: " + rank[1];
+  document.getElementById("rankNote").textContent = rank[2];
+
+  const cells = meterEl.children;
+  const fill = total * 20;
+  for (let i = 0; i < 20; i++) {
+    cells[i].className = i + 1 <= fill ? "on" : (i < fill ? "half" : "");
+  }
+
+  // body metrics
+  BODY.forEach(m => {
+    const sc = m.score(Number(bodyVals[m.id]) || 0);
+    document.getElementById("bar-" + m.id).style.width = Math.round(sc * 100) + "%";
+    document.getElementById("mp-" + m.id).textContent = Math.round(sc * 100) + "%";
+  });
+  document.getElementById("bodyPct").textContent = Math.round(bodyScore() * 100);
+
+  // survival days & death cause
+  const bonus = achCount() * ACH_BONUS;
+  const days = Math.max(1, Math.round(2 + Math.pow(total, 1.6) * 360 + bonus));
+  document.getElementById("daysNum").textContent = days;
+  document.getElementById("daysNote").textContent =
+    days >= 365 ? "1年以上。もはや終末の住人。" :
+    days >= 180 ? "冬を越せる計算。北の砦の主まであと少し。" :
+    days >= 90  ? "季節ひとつ分。冬が来る前に拠点系を固めろ。" :
+    days >= 30  ? "1ヶ月。初動は越えるが、持久戦で削られる。" :
+    days >= 7   ? "1週間前後。装備より先に基礎を埋めろ。" :
+                  "初週で脱落の見込み。実績ボーナス（+3日/個）も稼げ。";
+
+  const sp = spokes();
+  const weakest = [...sp].sort((a, b) => a.score - b.score)[0];
+  const dc = DEATH[weakest.key];
+  document.getElementById("deathCause").textContent = `${dc[0]}（${weakest.name} ${Math.round(weakest.score*100)}%）`;
+  document.getElementById("deathNote").textContent = dc[1];
+
+  // weak list
+  const weak2 = [...sp].sort((a, b) => a.score - b.score).slice(0, 2);
+  document.getElementById("weakList").innerHTML = weak2.map(c =>
+    `<li><span class="tag">RISK</span><span><b>${c.name}</b>（${Math.round(c.score*100)}%）— この系統が原因で詰む確率が最も高い</span></li>`
+  ).join("");
+
+  // recommendations
+  const targets = CATS.flatMap(c => c.skills.filter(s => s.st === 0 && s.pr >= 7).map(s => ({...s, cat: c.name})))
+    .sort((a, b) => b.pr - a.pr).slice(0, 5);
+  document.getElementById("nextList").innerHTML = targets.length
+    ? targets.map((s, i) =>
+        `<li><span class="next-rank">${String(i+1).padStart(2,"0")}</span><span><b>${s.name}</b>〈${s.cat}〉<p>${s.why}</p></span></li>`
+      ).join("")
+    : `<li><span class="next-rank">--</span><span><b>推奨事項なし</b><p>主要スキルは網羅済み。あとはその日を待つだけ。</p></span></li>`;
+
+  // gear grid
+  const scMap = {};
+  sp.forEach(s => scMap[s.key] = s.score);
+  const nameByKey = {}; sp.forEach(s => nameByKey[s.key] = s.name);
+  document.getElementById("gearGrid").innerHTML = GEAR.map(gd => {
+    const th = gd.th ?? GEAR_TH;
+    const on = scMap[gd.cat] >= th;
+    return `<span class="gear ${on ? "on" : ""}">${on ? "■" : "□"} ${gd.label}${on ? "" : "（" + nameByKey[gd.cat] + Math.round(th*100) + "%）"}</span>`;
+  }).join("");
+
+  // achievements
+  ACH.forEach(a => a._el.classList.toggle("on", !!achState[a.id]));
+  document.getElementById("achSum").textContent =
+    `UNLOCKED: ${achCount()} / ${ACH.length} — 生存日数ボーナス +${bonus}日`;
+
+  // roadmap
+  document.getElementById("roadmap").innerHTML = CATS.map(cat => {
+    const rows = cat.skills.filter(s => ROADMAP[s.id]).map(s => {
+      const r = ROADMAP[s.id];
+      return `<div class="rm-row" data-st="${s.st}">
+        <span class="rm-name"><span class="st">${STLABEL[s.st]}</span>${s.name}</span>
+        <span class="rm-cost">${r.cost}</span>
+        <span class="rm-time">${r.time}</span>
+        <span class="rm-how">${r.how}</span>
+      </div>`;
+    }).join("");
+    return rows ? `<div class="rm-cat"><h3>${cat.name} — ${cat.en}</h3>${rows}</div>` : "";
+  }).join("");
+
+  // ZOMCON
+  const lvl = pct >= 80 ? 5 : pct >= 60 ? 4 : pct >= 40 ? 3 : pct >= 20 ? 2 : 1;
+  const ZNAMES = { 5: "余裕", 4: "警戒", 3: "危険", 2: "重大", 1: "絶望" };
+  document.querySelectorAll(".zomcon-seg").forEach(s =>
+    s.classList.toggle("active", Number(s.dataset.level) === lvl));
+  const zn = document.getElementById("zomconNow");
+  zn.textContent = `ZOMCON ${lvl} — ${ZNAMES[lvl]}`;
+  zn.className = "zomcon-now z" + lvl;
+
+  drawRadar();
+  drawAvatar();
+  recordHistory(pct);
+  drawGrowth();
+  renderSim(); // 成功率表示を最新ステータスに追従させる
+}
+
+// ============================================================ radar (7 spokes)
+function drawRadar() {
+  const cv = document.getElementById("radar");
+  const ctx = cv.getContext("2d");
+  const W = cv.width, H = cv.height, cx = W / 2, cy = H / 2, R = W * 0.35;
+  const SP = spokes();
+  const n = SP.length;
+  ctx.clearRect(0, 0, W, H);
+  const ang = i => -Math.PI / 2 + i * 2 * Math.PI / n;
+
+  ctx.strokeStyle = "#3a4030";
+  ctx.lineWidth = 1;
+  for (let ring = 1; ring <= 4; ring++) {
+    ctx.beginPath();
+    for (let i = 0; i <= n; i++) {
+      const a = ang(i % n), r = R * ring / 4;
+      const x = cx + r * Math.cos(a), y = cy + r * Math.sin(a);
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+  }
+  for (let i = 0; i < n; i++) {
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(cx + R * Math.cos(ang(i)), cy + R * Math.sin(ang(i)));
+    ctx.stroke();
+  }
+
+  ctx.beginPath();
+  for (let i = 0; i <= n; i++) {
+    const j = i % n;
+    const v = Math.max(SP[j].score, 0.04);
+    const x = cx + R * v * Math.cos(ang(j)), y = cy + R * v * Math.sin(ang(j));
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  }
+  ctx.closePath();
+  ctx.fillStyle = "rgba(232,161,60,0.18)";
+  ctx.fill();
+  ctx.strokeStyle = "#e8a13c";
+  ctx.lineWidth = 2.5;
+  ctx.stroke();
+
+  for (let i = 0; i < n; i++) {
+    const v = Math.max(SP[i].score, 0.04);
+    const x = cx + R * v * Math.cos(ang(i)), y = cy + R * v * Math.sin(ang(i));
+    ctx.beginPath();
+    ctx.arc(x, y, 5, 0, Math.PI * 2);
+    ctx.fillStyle = "#e8a13c";
+    ctx.fill();
+  }
+
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  for (let i = 0; i < n; i++) {
+    const a = ang(i);
+    const x = cx + (R + 46) * Math.cos(a), y = cy + (R + 46) * Math.sin(a);
+    ctx.font = "600 22px " + getComputedStyle(document.body).fontFamily;
+    ctx.fillStyle = "#e7e2cf";
+    ctx.fillText(SP[i].name, x, y - 11);
+    ctx.font = "12px 'SF Mono', ui-monospace, Menlo, monospace";
+    ctx.fillStyle = "#6f6d5c";
+    ctx.fillText(Math.round(SP[i].score * 100) + "%", x, y + 11);
+  }
+}
+
+// ============================================================ avatar (pixel art)
+function drawAvatar() {
+  const cv = document.getElementById("avatar");
+  const ctx = cv.getContext("2d");
+  const u = 20;
+  ctx.clearRect(0, 0, cv.width, cv.height);
+  const R = (x, y, w, h, c) => { ctx.fillStyle = c; ctx.fillRect(x * u, y * u, w * u, h * u); };
+  const sc = {};
+  spokes().forEach(s => sc[s.key] = s.score);
+  const g = k => sc[k] >= GEAR_TH;
+  const buff = sc.body >= 0.5;
+  const pct = Math.round(totalScore() * 100);
+  let rankIdx = 0;
+  RANKS.forEach((r, i) => { if (pct >= r[0]) rankIdx = i; });
+
+  if (rankIdx >= 3) {
+    const col = rankIdx >= 5 ? "193,68,58" : "232,161,60";
+    const grad = ctx.createRadialGradient(12*u, 14*u, 2*u, 12*u, 14*u, 12*u);
+    grad.addColorStop(0, `rgba(${col},0.22)`);
+    grad.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, cv.width, cv.height);
+  }
+  ctx.fillStyle = "rgba(0,0,0,0.35)";
+  ctx.beginPath();
+  ctx.ellipse(12*u, 28.4*u, 6*u, 1*u, 0, 0, Math.PI*2);
+  ctx.fill();
+
+  if (g("food")) {
+    R(5, 12, 2, 5, "#7a5b33"); R(17, 12, 2, 5, "#7a5b33");
+    R(5, 12, 2, 1, "#5c451f"); R(17, 12, 2, 1, "#5c451f");
+  }
+  const jacket = rankIdx <= 1 ? "#68675b" : rankIdx <= 3 ? "#4c5a36" : "#3b452c";
+  R(8, 11, 8, 7, jacket);
+  R(7, 11, 1, 6, jacket); R(16, 11, 1, 6, jacket);
+  if (buff) { // physique: bulked shoulders & arms
+    R(6, 11, 1, 4, jacket); R(17, 11, 1, 4, jacket);
+    R(6, 15, 1, 2, "#c99b6f"); R(17, 15, 1, 2, "#c99b6f"); // forearms
+  }
+  R(7, 17, 1, 1, "#c99b6f"); R(16, 17, 1, 1, "#c99b6f");
+  if (rankIdx >= 4) { R(8, 11, 2, 1, "#e8a13c"); R(14, 11, 2, 1, "#e8a13c"); }
+  if (g("food")) { R(9, 11, 1, 6, "#5c451f"); R(14, 11, 1, 6, "#5c451f"); }
+  if (g("shelter")) {
+    R(8, 18, 8, 1, "#6b5426"); R(11, 18, 2, 1, "#e8a13c");
+    R(5, 18, 3, 1, "#55575a"); R(6, 19, 1, 3, "#8a6a3c");
+  } else {
+    R(8, 18, 8, 1, "#2a2a22");
+  }
+  if (g("lifeline")) {
+    R(16.2, 18, 1.8, 2, "#ddd8c8");
+    R(16.8, 18.2, 0.6, 1.6, "#c1443a"); R(16.3, 18.7, 1.6, 0.6, "#c1443a");
+  }
+  R(9, 19, 2, 7, "#45483a"); R(13, 19, 2, 7, "#45483a");
+  R(8, 26, 3, 2, "#26221c"); R(13, 26, 3, 2, "#26221c");
+  R(11, 10, 2, 1, "#c99b6f");
+  R(9, 6, 6, 4, "#c99b6f");
+  // hair: swept up, forehead visible
+  R(9, 4, 6, 2, "#3a2f23");
+  R(10, 3, 4, 1, "#3a2f23");
+  R(9, 6, 1, 1, "#3a2f23"); R(14, 6, 1, 1, "#3a2f23");
+  if (rankIdx >= 2) { ctx.globalAlpha = 0.5; R(10, 9, 4, 1, "#8a6a4a"); ctx.globalAlpha = 1; }
+  const eye = rankIdx >= 5 ? "#c1443a" : "#1c1c1c";
+  R(10, 7, 1, 1, eye); R(13, 7, 1, 1, eye);
+  if (g("mobility")) {
+    R(8, 3, 8, 3, "#e8a13c");
+    R(8, 5, 1, 2, "#e8a13c"); R(15, 5, 1, 2, "#e8a13c");
+  }
+  if (g("tactics")) {
+    R(8, 7, 1, 1, "#1c1c1c"); R(15, 7, 1, 1, "#1c1c1c");
+    R(15.6, 2, 0.5, 5, "#8a8a7a");
+    R(15.3, 1.4, 1.1, 0.9, "#c1443a");
+  }
+  if (g("combat")) {
+    R(4, 13, 12, 1, "#2f2f28");
+    R(16, 13, 2, 2, "#4a3b28");
+    R(9, 14, 1, 2, "#2f2f28");
+    R(5, 12.6, 1, 0.5, "#2f2f28");
+  }
+}
+
+// ============================================================ growth history
+function todayStr() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+}
+function recordHistory(pct) {
+  const t = todayStr();
+  const last = history[history.length - 1];
+  if (last && last.d === t) last.p = pct;
+  else history.push({ d: t, p: pct });
+  if (history.length > 120) history = history.slice(-120);
+  store(KEYH, history);
+}
+function drawGrowth() {
+  const cv = document.getElementById("growth");
+  const ctx = cv.getContext("2d");
+  const W = cv.width, H = cv.height;
+  const padL = 70, padR = 40, padT = 30, padB = 60;
+  ctx.clearRect(0, 0, W, H);
+
+  ctx.strokeStyle = "#3a4030";
+  ctx.lineWidth = 1;
+  ctx.font = "20px 'SF Mono', ui-monospace, Menlo, monospace";
+  ctx.fillStyle = "#6f6d5c";
+  ctx.textAlign = "right";
+  ctx.textBaseline = "middle";
+  for (let v = 0; v <= 100; v += 25) {
+    const y = padT + (H - padT - padB) * (1 - v / 100);
+    ctx.beginPath();
+    ctx.moveTo(padL, y); ctx.lineTo(W - padR, y);
+    ctx.stroke();
+    ctx.fillText(v + "%", padL - 12, y);
+  }
+
+  const pts = history;
+  if (!pts.length) return;
+  const n = pts.length;
+  const X = i => n === 1 ? (padL + W - padR) / 2 : padL + (W - padL - padR) * i / (n - 1);
+  const Y = p => padT + (H - padT - padB) * (1 - p / 100);
+
+  ctx.strokeStyle = "#e8a13c";
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  pts.forEach((pt, i) => { i === 0 ? ctx.moveTo(X(i), Y(pt.p)) : ctx.lineTo(X(i), Y(pt.p)); });
+  ctx.stroke();
+
+  pts.forEach((pt, i) => {
+    ctx.beginPath();
+    ctx.arc(X(i), Y(pt.p), i === n - 1 ? 9 : 5, 0, Math.PI * 2);
+    ctx.fillStyle = "#e8a13c";
+    ctx.fill();
+  });
+
+  // last point label
+  const last = pts[n - 1];
+  ctx.font = "700 26px 'SF Mono', ui-monospace, Menlo, monospace";
+  ctx.fillStyle = "#e7e2cf";
+  ctx.textAlign = "center";
+  ctx.fillText(last.p + "%", X(n - 1), Y(last.p) - 24);
+
+  // x labels: first & last date
+  ctx.font = "18px 'SF Mono', ui-monospace, Menlo, monospace";
+  ctx.fillStyle = "#6f6d5c";
+  ctx.textAlign = "left";
+  ctx.fillText(pts[0].d, padL, H - 24);
+  ctx.textAlign = "right";
+  ctx.fillText(last.d, W - padR, H - 24);
+}
+
+// ============================================================ simulator
+let sim = { idx: 0, dead: false, logs: [] };
+const simLog = document.getElementById("simLog");
+const simChoices = document.getElementById("simChoices");
+
+function simProb(catKey) {
+  const sc = {};
+  spokes().forEach(s => sc[s.key] = s.score);
+  return 0.25 + 0.7 * (sc[catKey] ?? 0);
+}
+function catNameOf(key) {
+  const s = spokes().find(x => x.key === key);
+  return s ? s.name : key;
+}
+function renderSim() {
+  simLog.innerHTML = sim.logs.join("");
+  simChoices.innerHTML = "";
+  if (sim.dead) return;
+  if (sim.idx >= EVENTS.length) return;
+  const ev = EVENTS[sim.idx];
+  ev.choices.forEach(ch => {
+    const b = document.createElement("button");
+    const p = Math.round(simProb(ch.cat) * 100);
+    b.innerHTML = `▸ ${ch.label} 〈${catNameOf(ch.cat)}〉<span class="pct">成功率 ${p}%</span>`;
+    b.addEventListener("click", () => {
+      const p2 = simProb(ch.cat);
+      const roll = Math.random();
+      if (roll < p2) {
+        sim.logs.push(`<p class="sim-ok">✔ ${ch.ok}</p>`);
+        sim.idx++;
+        if (sim.idx >= EVENTS.length) {
+          sim.logs.push(`<p class="sim-day">■ DAY 93 — 集結地点に到達。</p><p class="sim-ok">90日間の生存を確認。半年後、あなたの拠点は「北の砦」と呼ばれている。現実のステータスをさらに上げて、次は全選択肢を制覇せよ。</p>`);
+        } else {
+          const nx = EVENTS[sim.idx];
+          sim.logs.push(`<p><span class="sim-day">■ DAY ${nx.day}</span> — ${nx.text.replace(/^DAY \d+ — /, "")}</p>`);
+        }
+      } else {
+        sim.dead = true;
+        sim.logs.push(`<p class="sim-ng">✘ ${ch.ng}</p>`);
+        sim.logs.push(`<p class="sim-ng">━━━ 死亡確認 ━━━<br>生存日数: ${EVENTS[sim.idx].day}日 / 死因系統:〈${catNameOf(ch.cat)}〉${Math.round((spokes().find(s=>s.key===ch.cat)?.score ?? 0)*100)}%<br>「作戦計画」タブのロードマップでこの系統を埋めてから再挑戦せよ。</p>`);
+      }
+      renderSim();
+      simLog.parentElement.scrollIntoView({ block: "nearest" });
+    });
+    simChoices.appendChild(b);
+  });
+}
+function resetSim() {
+  sim = { idx: 0, dead: false, logs: [
+    `<p><span class="sim-day">■ DAY 0</span> — ${EVENTS[0].text.replace(/^DAY \d+ — /, "")}</p>`
+  ]};
+  renderSim();
+}
+document.getElementById("simRestart").addEventListener("click", resetSim);
+
+// ============================================================ init
+showTab(load(KEYT, "hq"));
+render();
+resetSim();
+</script>
+
+<script>
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js"));
+}
+</script>
+
+</body>
+</html>
