@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>THE LAST MAN — 最後の漢・福島勇太</title>
+<title>THE LAST MAN — 終末生存能力査定</title>
 <style>
   /* ============================================================
      FUKUSHIMA YUTA — bunker terminal / survival dossier v3
@@ -485,15 +485,15 @@
 
 
 <div class="wrap">
-  <div class="alert-bar"><i></i><span>Biohazard alert level 4 — Sapporo grid 43.06N / 141.35E — outbreak protocol active</span></div>
+  <div class="alert-bar"><i></i><span>Biohazard alert level 4 — outbreak protocol active — survivor assessment</span></div>
 
   <div class="stamp-row">
-    <span>★ FILE No. 1994-CHIBA-SPK / SUBJECT: FUKUSHIMA YUTA / LOT 43-141</span>
+    <span>★ FILE No. TLM-001 / SUBJECT: <span id="pfSubject">UNREGISTERED</span></span>
     <span class="red">CLASSIFIED</span>
   </div>
 
-  <div class="eyebrow">Mil-Spec Survival Dossier — Est. 1994 — Sapporo, Hokkaido</div>
-  <h1><span class="en">The Last Man</span><span class="jp">最後の漢・福島勇太</span><span class="star-badge" aria-hidden="true"></span></h1>
+  <div class="eyebrow">Mil-Spec Survival Dossier — Outbreak Readiness Program</div>
+  <h1><span class="en">The Last Man</span><span class="jp">最後の漢・<span id="pfName">名無しの生存者</span></span><span class="star-badge" aria-hidden="true"></span></h1>
   <p class="subtitle">街がゾンビに呑まれた日、最後に立っている漢になる — 終末生存能力査定書。全データはこの端末に自動保存。</p>
 
   <nav class="tabs" id="tabs">
@@ -616,7 +616,24 @@
 
   <!-- ================= 記録 ================= -->
   <section class="tab-panel" id="panel-log">
-    <h2 class="sec-title">実績 — 経験の勲章</h2>
+    <h2 class="sec-title">プロフィール — SURVIVOR ID</h2>
+    <p class="lead">この査定書の対象者情報。チーム機能（準備中）では、ここで設定した名前とステータスが仲間に表示される。</p>
+    <div class="metrics">
+      <div class="metric">
+        <div class="m-head"><span class="m-name">コードネーム（表示名）</span><span class="m-target">ヘッダーに表示</span></div>
+        <div class="m-ctrl"><input type="text" id="pf-codename" maxlength="20" style="width:100%" placeholder="例: 最後の漢"></div>
+      </div>
+      <div class="metric">
+        <div class="m-head"><span class="m-name">ラテン表記</span><span class="m-target">書類のSUBJECT欄</span></div>
+        <div class="m-ctrl"><input type="text" id="pf-latin" maxlength="30" style="width:100%" placeholder="e.g. LAST MAN"></div>
+      </div>
+      <div class="metric">
+        <div class="m-head"><span class="m-name">拠点エリア</span><span class="m-target">任意</span></div>
+        <div class="m-ctrl"><input type="text" id="pf-base" maxlength="20" style="width:100%" placeholder="例: 札幌"></div>
+      </div>
+    </div>
+
+    <h2 class="sec-title sec-gap">実績 — 経験の勲章</h2>
     <p class="lead">免許や数値では測れない「実戦経験」。達成したらクリックで解除。実績1つにつき推定生存日数 +3日。</p>
     <div class="ach-grid" id="achGrid"></div>
     <div class="ach-sum" id="achSum"></div>
@@ -870,6 +887,7 @@ const KEYB = "the-day-body-v1";
 const KEYA = "the-day-ach-v1";
 const KEYH = "the-day-history-v1";
 const KEYT = "the-day-tab-v1";
+const KEYP = "the-day-profile-v1";
 
 const load = (k, def) => { try { return JSON.parse(localStorage.getItem(k)) ?? def; } catch (e) { return def; } };
 const store = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} };
@@ -888,6 +906,7 @@ CATS.forEach(c => c.skills.forEach(s => {
 let bodyVals = load(KEYB, {});
 let achState = load(KEYA, {});
 let history  = load(KEYH, []);
+let profile  = load(KEYP, {});
 
 function saveSkills() {
   const out = {};
@@ -1423,7 +1442,25 @@ function resetSim() {
 }
 document.getElementById("simRestart").addEventListener("click", resetSim);
 
+// ============================================================ profile
+function applyProfile() {
+  const cn = (profile.codename || "").trim();
+  const lt = (profile.latin || "").trim();
+  document.getElementById("pfName").textContent = cn || "名無しの生存者";
+  document.getElementById("pfSubject").textContent = (lt || cn || "UNREGISTERED").toUpperCase();
+}
+["codename", "latin", "base"].forEach(k => {
+  const el = document.getElementById("pf-" + k);
+  el.value = profile[k] || "";
+  el.addEventListener("input", () => {
+    profile[k] = el.value;
+    store(KEYP, profile);
+    applyProfile();
+  });
+});
+
 // ============================================================ init
+applyProfile();
 showTab(load(KEYT, "hq"));
 render();
 resetSim();
