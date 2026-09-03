@@ -472,6 +472,47 @@
   .zomcon-seg.active[data-level="1"] { background: var(--bone); color: #16120a; animation: blink 1.2s steps(2) infinite; }
   @media (prefers-reduced-motion: reduce) { .zomcon-seg.active[data-level="1"] { animation: none; } }
 
+  /* ---------- auth & squad ---------- */
+  .auth-bar {
+    display: flex; align-items: center; gap: 12px; justify-content: space-between; flex-wrap: wrap;
+    margin-bottom: 14px; padding: 8px 14px;
+    border: 1px solid var(--line); background: var(--panel); font-size: 12.5px;
+  }
+  .auth-bar .u { color: var(--bone-dim); font-family: var(--mono); font-size: 11.5px; letter-spacing: .06em; }
+  .btn {
+    display: inline-block; font-family: var(--display); font-weight: 400; font-size: 14px; letter-spacing: .1em;
+    padding: 9px 20px; cursor: pointer; border: 1px solid var(--hazard); background: none; color: var(--hazard);
+  }
+  .btn:hover { background: var(--hazard); color: #171204; }
+  .btn.solid { background: var(--hazard); color: #171204; }
+  .btn.ghost { border-color: var(--bone-faint); color: var(--bone-dim); }
+  .btn.danger { border-color: var(--blood); color: var(--blood); }
+  .btn.danger:hover { background: var(--blood); color: #f6ece9; }
+  input.ti {
+    padding: 9px 12px; font-family: var(--mono); font-size: 14px;
+    background: var(--ground); color: var(--bone); border: 1px solid var(--line);
+  }
+  .team-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px; margin-top: 14px; }
+  .tm-card { border: 1px solid var(--line); background: var(--panel); padding: 14px 16px; }
+  .tm-card b { font-size: 15px; }
+  .tm-meta { font-family: var(--mono); font-size: 10.5px; color: var(--bone-faint); letter-spacing: .08em; }
+  .tm-pct { font-family: var(--display); font-size: 30px; color: var(--hazard); line-height: 1.1; }
+  .ts-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-top: 1px dashed var(--line); font-size: 13px; }
+  .ts-row .nm { width: 66px; flex: none; font-weight: 700; }
+  .ts-bar { flex: 1; height: 10px; background: #262c1c; }
+  .ts-bar i { display: block; height: 100%; background: var(--hazard); }
+  .ts-row.weak .nm { color: var(--blood); }
+  .ts-row.weak .ts-bar i { background: var(--blood); }
+  .ts-holder { font-family: var(--mono); font-size: 10.5px; color: var(--bone-dim); width: 120px; text-align: right; flex: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .invite-box {
+    font-family: var(--mono); font-size: 22px; letter-spacing: .3em; color: var(--hazard);
+    border: 2px dashed var(--hazard); padding: 8px 18px; display: inline-block;
+  }
+  .duo-days { display: flex; gap: 26px; align-items: baseline; flex-wrap: wrap; margin-top: 6px; }
+  .duo-days .big { font-family: var(--display); font-size: 46px; color: var(--hazard); }
+  .duo-days .mul { color: var(--moss); font-weight: 900; font-size: 18px; }
+  .team-form { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-top: 10px; }
+
   footer { margin-top: 40px; font-family: var(--mono); font-size: 11px; color: var(--bone-faint); letter-spacing: .1em; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; border-top: 1px solid var(--line); padding-top: 12px; }
 </style>
 <link rel="manifest" href="manifest.webmanifest">
@@ -484,8 +525,14 @@
 <body>
 
 
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
 <div class="wrap">
   <div class="alert-bar"><i></i><span>Biohazard alert level 4 — outbreak protocol active — survivor assessment</span></div>
+
+  <div class="auth-bar" id="authBar" hidden></div>
 
   <div class="stamp-row">
     <span>★ FILE No. TLM-001 / SUBJECT: <span id="pfSubject">UNREGISTERED</span></span>
@@ -502,6 +549,7 @@
     <button data-tab="body"><b>Physical</b><span>肉体</span></button>
     <button data-tab="sim"><b>Simulator</b><span>シミュレーター</span></button>
     <button data-tab="plan"><b>Ops Plan</b><span>作戦計画</span></button>
+    <button data-tab="team"><b>Squad</b><span>チーム</span></button>
     <button data-tab="log"><b>Records</b><span>記録</span></button>
   </nav>
 
@@ -614,10 +662,17 @@
 
   </section>
 
+  <!-- ================= チーム ================= -->
+  <section class="tab-panel" id="panel-team">
+    <h2 class="sec-title">スクワッド — SQUAD</h2>
+    <p class="lead">一人で生き残る時代は終わった。仲間と系統を補完し合い、小隊としての生存率を査定する。7系統それぞれ「隊内最強の値」が小隊値になる — 全員が全部できる必要はない。</p>
+    <div id="teamRoot" style="margin-top:16px"></div>
+  </section>
+
   <!-- ================= 記録 ================= -->
   <section class="tab-panel" id="panel-log">
     <h2 class="sec-title">プロフィール — SURVIVOR ID</h2>
-    <p class="lead">この査定書の対象者情報。チーム機能（準備中）では、ここで設定した名前とステータスが仲間に表示される。</p>
+    <p class="lead">この査定書の対象者情報。チーム機能では、ここで設定したコードネームとステータスが隊員名簿に表示される。</p>
     <div class="metrics">
       <div class="metric">
         <div class="m-head"><span class="m-name">コードネーム（表示名）</span><span class="m-target">ヘッダーに表示</span></div>
@@ -890,7 +945,10 @@ const KEYT = "the-day-tab-v1";
 const KEYP = "the-day-profile-v1";
 
 const load = (k, def) => { try { return JSON.parse(localStorage.getItem(k)) ?? def; } catch (e) { return def; } };
-const store = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} };
+const store = (k, v) => {
+  try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {}
+  if (k !== KEYT) scheduleCloudPush(); // ログイン中はクラウドにも自動保存
+};
 
 // v2: lv保存。v2が無ければ旧v1(st)から移行（経験系: 取得中→LV2, 習得済→LV4）
 const savedV2 = load(KEY2, null);
@@ -944,6 +1002,7 @@ function showTab(name) {
   document.querySelectorAll(".tab-panel").forEach(p => p.classList.toggle("active", p.id === "panel-" + name));
   tabsEl.querySelectorAll("button").forEach(b => b.classList.toggle("active", b.dataset.tab === name));
   store(KEYT, name);
+  if (name === "team") { renderTeam(); if (typeof user !== "undefined" && user && myTeamId) loadTeam(); }
 }
 tabsEl.addEventListener("click", e => {
   const b = e.target.closest("button[data-tab]");
@@ -1459,8 +1518,316 @@ function applyProfile() {
   });
 });
 
+// ============================================================ cloud (Firebase: Googleログイン＋同期＋チーム)
+const FB_CONFIG = {
+  apiKey: "AIzaSyAJtsGEmcgNL-TyVzimh9YqEmussQZLbWc",
+  authDomain: "the-last-man-90d86.firebaseapp.com",
+  projectId: "the-last-man-90d86",
+  storageBucket: "the-last-man-90d86.firebasestorage.app",
+  messagingSenderId: "802261836035",
+  appId: "1:802261836035:web:5716c698e57b3f981bc936"
+};
+let fbAuth = null, db = null, user = null, cloudReady = false;
+let myTeamId = null, teamData = null, pushTimer = null, cloudLoaded = false;
+
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c =>
+  ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+function myName() {
+  return (profile.codename || "").trim() || (user && user.displayName) || "名無しの生存者";
+}
+function currentDays() {
+  return Math.max(1, Math.round(2 + Math.pow(totalScore(), 1.6) * 360 + achCount() * ACH_BONUS));
+}
+function currentRankName() {
+  const pct = Math.round(totalScore() * 100);
+  let r = RANKS[0];
+  RANKS.forEach(x => { if (pct >= x[0]) r = x; });
+  return r[1];
+}
+
+function scheduleCloudPush() {
+  if (!user || !db || !cloudLoaded) return;
+  clearTimeout(pushTimer);
+  pushTimer = setTimeout(() => pushCloud().catch(() => {}), 2500);
+}
+
+async function pushCloud() {
+  if (!user || !db) return;
+  const skills = {};
+  CATS.forEach(c => c.skills.forEach(s => skills[s.id] = s.lv));
+  await db.collection("users").doc(user.uid).set({
+    codename: profile.codename || "", latin: profile.latin || "", base: profile.base || "",
+    displayName: user.displayName || "",
+    skills, body: bodyVals, ach: achState,
+    pct: Math.round(totalScore() * 100),
+    days: currentDays(),
+    rankName: currentRankName(),
+    spokes: spokes().map(s => ({ key: s.key, name: s.name, score: s.score })),
+    teamId: myTeamId || null,
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+  });
+}
+
+function applyCloud(d) {
+  if (d.skills) CATS.forEach(c => c.skills.forEach(s => {
+    if (d.skills[s.id] !== undefined) s.lv = d.skills[s.id];
+    s.st = computeSt(s);
+  }));
+  if (d.body) bodyVals = d.body;
+  if (d.ach) achState = d.ach;
+  profile = { codename: d.codename || "", latin: d.latin || "", base: d.base || "" };
+  try {
+    localStorage.setItem(KEY2, JSON.stringify(d.skills || {}));
+    localStorage.setItem(KEYB, JSON.stringify(bodyVals));
+    localStorage.setItem(KEYA, JSON.stringify(achState));
+    localStorage.setItem(KEYP, JSON.stringify(profile));
+  } catch (e) {}
+  BODY.forEach(m => { const el = document.getElementById("bm-" + m.id); if (el) el.value = bodyVals[m.id] || ""; });
+  ["codename", "latin", "base"].forEach(k => { const el = document.getElementById("pf-" + k); if (el) el.value = profile[k] || ""; });
+  applyProfile();
+  render();
+}
+
+async function doLogin() {
+  const prov = new firebase.auth.GoogleAuthProvider();
+  try { await fbAuth.signInWithPopup(prov); }
+  catch (e) {
+    try { await fbAuth.signInWithRedirect(prov); }
+    catch (e2) { alert("ログインに失敗: " + (e2.message || e2)); }
+  }
+}
+
+function renderAuth() {
+  const bar = document.getElementById("authBar");
+  if (!cloudReady) { bar.hidden = true; return; }
+  bar.hidden = false;
+  if (user) {
+    bar.innerHTML = `<span class="u">◆ UPLINK ONLINE — ${esc(myName())} / クラウド同期中</span>
+      <button class="btn ghost" id="btnLogout">ログアウト</button>`;
+    document.getElementById("btnLogout").onclick = () => fbAuth.signOut();
+  } else {
+    bar.innerHTML = `<span class="u">◇ UPLINK OFFLINE — ログインでクラウド保存＆チーム機能</span>
+      <button class="btn solid" id="btnLogin">Googleでログイン</button>`;
+    document.getElementById("btnLogin").onclick = doLogin;
+  }
+}
+
+// ---------- team ----------
+function genCode() {
+  const chars = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+  let c = "";
+  for (let i = 0; i < 6; i++) c += chars[Math.floor(Math.random() * chars.length)];
+  return c;
+}
+
+async function createTeam(name) {
+  if (!name.trim()) { alert("チーム名を入れてくれ"); return; }
+  const code = genCode();
+  await db.collection("teams").doc(code).set({
+    name: name.trim(), ownerUid: user.uid,
+    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+  });
+  myTeamId = code;
+  await pushCloud();
+  await loadTeam();
+}
+
+async function joinTeam(code) {
+  code = code.trim().toUpperCase();
+  if (!code) return;
+  const t = await db.collection("teams").doc(code).get();
+  if (!t.exists) { alert("そのコードの小隊は見つからない。コードを確認してくれ。"); return; }
+  myTeamId = code;
+  await pushCloud();
+  await loadTeam();
+}
+
+async function leaveTeam() {
+  if (!confirm("小隊を離脱する？（データは消えない）")) return;
+  myTeamId = null;
+  teamData = null;
+  await pushCloud();
+  renderTeam();
+}
+
+async function loadTeam() {
+  if (!myTeamId) return;
+  try {
+    const t = await db.collection("teams").doc(myTeamId).get();
+    const mem = await db.collection("users").where("teamId", "==", myTeamId).get();
+    teamData = {
+      info: t.exists ? t.data() : { name: myTeamId },
+      members: mem.docs.map(d => ({ uid: d.id, ...d.data() })),
+    };
+  } catch (e) {
+    teamData = null;
+  }
+  renderTeam();
+}
+
+function teamCalc(members) {
+  const keys = spokes().map(s => ({ key: s.key, name: s.name }));
+  const per = keys.map(k => {
+    const rows = members.map(m => ({
+      m, score: ((m.spokes || []).find(x => x.key === k.key) || {}).score || 0,
+    })).sort((a, b) => b.score - a.score);
+    const top = rows[0] || { score: 0, m: null };
+    const bonus = Math.min(0.15, rows.slice(1).reduce((a, r) => a + r.score, 0) * 0.1);
+    return { ...k, val: Math.min(1, top.score + bonus), holder: top.m, holderScore: top.score };
+  });
+  const total = per.reduce((a, p) => a + p.val, 0) / per.length;
+  const days = Math.max(1, Math.round(2 + Math.pow(total, 1.6) * 360));
+  return { per, total, days };
+}
+
+function memberName(m) {
+  return (m.codename || "").trim() || m.displayName || "名無し";
+}
+
+function renderTeam() {
+  const root = document.getElementById("teamRoot");
+  if (!root) return;
+  if (!cloudReady) {
+    root.innerHTML = `<div class="card"><span class="label">Offline Build</span>
+      <p style="margin-top:10px">この環境ではチーム機能を使えない。本体アプリ（GitHub Pages版）で開いてくれ。</p></div>`;
+    return;
+  }
+  if (!user) {
+    root.innerHTML = `<div class="card"><span class="label">Uplink Required</span>
+      <p style="margin:10px 0 14px">チーム機能にはGoogleログインが必要だ。ログインすると自分の査定データもクラウドに保存され、機種変更しても消えなくなる。</p>
+      <button class="btn solid" id="btnLogin2">Googleでログイン</button></div>`;
+    document.getElementById("btnLogin2").onclick = doLogin;
+    return;
+  }
+  if (!myTeamId) {
+    root.innerHTML = `
+      <div class="card">
+        <span class="label">Form a Squad — 小隊を結成</span>
+        <div class="team-form">
+          <input class="ti" id="tName" maxlength="20" placeholder="小隊名（例: 北の砦）">
+          <button class="btn solid" id="btnCreate">結成する</button>
+        </div>
+      </div>
+      <div class="card" style="margin-top:12px">
+        <span class="label">Join a Squad — 招待コードで参加</span>
+        <div class="team-form">
+          <input class="ti" id="tCode" maxlength="6" placeholder="6桁コード" style="text-transform:uppercase; letter-spacing:.3em">
+          <button class="btn" id="btnJoin">参加する</button>
+        </div>
+      </div>`;
+    document.getElementById("btnCreate").onclick = () => createTeam(document.getElementById("tName").value).catch(e => alert("結成失敗: " + e.message));
+    document.getElementById("btnJoin").onclick = () => joinTeam(document.getElementById("tCode").value).catch(e => alert("参加失敗: " + e.message));
+    return;
+  }
+  if (!teamData) {
+    root.innerHTML = `<div class="card"><p>小隊データを受信中...</p></div>`;
+    return;
+  }
+
+  const tc = teamCalc(teamData.members);
+  const soloDays = currentDays();
+  const mul = (tc.days / Math.max(1, soloDays)).toFixed(1);
+  const weakest = [...tc.per].sort((a, b) => a.val - b.val)[0];
+
+  const memberCards = teamData.members.map(m => {
+    const tops = (m.spokes || []).slice().sort((a, b) => b.score - a.score).slice(0, 2);
+    const me = m.uid === user.uid ? "（自分）" : "";
+    return `<div class="tm-card">
+      <b>${esc(memberName(m))}</b><span class="tm-meta"> ${me}</span>
+      <div class="tm-meta" style="margin-top:2px">${esc(m.rankName || "査定中")}${m.base ? " ／ " + esc(m.base) : ""}</div>
+      <div class="tm-pct">${m.pct ?? 0}<small style="font-size:.45em">%</small></div>
+      <div class="tm-meta">得意: ${tops.map(t => esc(t.name) + " " + Math.round(t.score * 100) + "%").join(" ／ ") || "—"}</div>
+    </div>`;
+  }).join("");
+
+  const sysRows = tc.per.map(p => `
+    <div class="ts-row ${p === weakest ? "weak" : ""}">
+      <span class="nm">${esc(p.name)}</span>
+      <div class="ts-bar"><i style="width:${Math.round(p.val * 100)}%"></i></div>
+      <span class="ts-holder">${p.holder ? esc(memberName(p.holder)) + " 担当" : "—"}</span>
+    </div>`).join("");
+
+  root.innerHTML = `
+    <div class="card">
+      <div style="display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap; gap:10px">
+        <div><span class="label">Squad</span>
+          <div style="font-size:22px; font-weight:900; letter-spacing:.06em">${esc(teamData.info.name || myTeamId)}</div>
+          <div class="tm-meta">MEMBERS: ${teamData.members.length}</div>
+        </div>
+        <div style="text-align:right">
+          <span class="label">Invite Code — 仲間に共有</span><br>
+          <span class="invite-box" id="inviteCode">${esc(myTeamId)}</span><br>
+          <button class="btn ghost" id="btnCopyCode" style="margin-top:8px; font-size:11px; padding:5px 12px">コードをコピー</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:12px">
+      <span class="label">Squad Survival — 小隊生存査定</span>
+      <div class="duo-days">
+        <span><span class="big">${tc.days}</span> 日</span>
+        <span class="tm-meta">ソロ ${soloDays}日 → <span class="mul">×${mul}倍</span></span>
+      </div>
+      <p style="margin:8px 0 4px; font-size:13px; color:var(--bone-dim)">
+        小隊の穴は<b style="color:var(--blood)">「${esc(weakest.name)}」(${Math.round(weakest.val * 100)}%)</b>。この系統を持つ生存者を勧誘するか、誰かが埋めろ。</p>
+      <div class="team-sys" style="margin-top:10px">${sysRows}</div>
+    </div>
+
+    <span class="label" style="display:block; margin-top:18px">Members — 隊員名簿</span>
+    <div class="team-grid">${memberCards}</div>
+
+    <div style="margin-top:18px; display:flex; gap:10px; flex-wrap:wrap">
+      <button class="btn ghost" id="btnRefresh">名簿を更新</button>
+      <button class="btn danger" id="btnLeave">小隊を離脱</button>
+    </div>`;
+
+  document.getElementById("btnCopyCode").onclick = async () => {
+    try { await navigator.clipboard.writeText(myTeamId); alert("コピーした: " + myTeamId); }
+    catch (e) { alert("コード: " + myTeamId); }
+  };
+  document.getElementById("btnRefresh").onclick = () => loadTeam();
+  document.getElementById("btnLeave").onclick = () => leaveTeam().catch(e => alert("離脱失敗: " + e.message));
+}
+
+if (typeof firebase !== "undefined") {
+  try {
+    firebase.initializeApp(FB_CONFIG);
+    fbAuth = firebase.auth();
+    db = firebase.firestore();
+    cloudReady = true;
+    fbAuth.onAuthStateChanged(async u => {
+      user = u;
+      renderAuth();
+      if (u) {
+        try {
+          const snap = await db.collection("users").doc(u.uid).get();
+          if (snap.exists) {
+            const d = snap.data();
+            myTeamId = d.teamId || null;
+            applyCloud(d);
+          } else {
+            await pushCloud(); // 初回ログイン: 端末のデータをクラウドへ移行
+          }
+          cloudLoaded = true;
+          if (myTeamId) loadTeam(); else renderTeam();
+        } catch (e) {
+          cloudLoaded = true;
+          console.error("cloud sync error", e);
+        }
+      } else {
+        myTeamId = null; teamData = null; cloudLoaded = false;
+        renderTeam();
+      }
+    });
+  } catch (e) {
+    cloudReady = false;
+  }
+}
+
 // ============================================================ init
 applyProfile();
+renderAuth();
 showTab(load(KEYT, "hq"));
 render();
 resetSim();
