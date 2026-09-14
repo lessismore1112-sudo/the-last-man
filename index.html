@@ -522,7 +522,22 @@
   .g-stats b { color: var(--hazard); font-size: 14px; font-variant-numeric: tabular-nums; }
   .g-stats .gs.ok b { color: var(--moss); }
   .g-stats .gs.ng, .g-stats .gs.ng b { color: var(--blood); }
-  #gLog { max-height: 300px; overflow-y: auto; padding-right: 4px; }
+  #gLog { max-height: 180px; overflow-y: auto; padding-right: 4px; margin-top: 12px; }
+  .g-canvas-wrap { position: relative; display: flex; justify-content: center; background: #0b0d07; border: 1px solid var(--line); padding: 8px; }
+  #gameCanvas { width: 100%; max-width: 480px; image-rendering: pixelated; display: block; }
+  .g-menu {
+    position: absolute; left: 10px; right: 10px; bottom: 10px; z-index: 5;
+    background: var(--panel); border: 2px solid var(--hazard); padding: 10px 12px;
+  }
+  .g-menu h4 { margin: 0 0 8px; font-size: 12px; letter-spacing: .1em; color: var(--hazard); font-family: var(--mono); }
+  .dpad { display: grid; grid-template-columns: repeat(3, 64px); gap: 6px; justify-content: center; margin: 12px 0 2px; user-select: none; -webkit-user-select: none; }
+  .dpad button {
+    height: 52px; font-size: 15px; font-family: var(--mono);
+    background: var(--panel-2); border: 1px solid var(--line); color: var(--bone);
+    cursor: pointer; touch-action: none;
+  }
+  .dpad button:active { background: var(--hazard); color: #171204; }
+  .dpad button[data-d="act"] { border-color: var(--hazard); color: var(--hazard); font-weight: 700; }
 
   footer { margin-top: 40px; font-family: var(--mono); font-size: 11px; color: var(--bone-faint); letter-spacing: .1em; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; border-top: 1px solid var(--line); padding-top: 12px; }
 </style>
@@ -657,11 +672,19 @@
   <!-- ================= シミュレーター ================= -->
   <section class="tab-panel" id="panel-sim">
     <h2 class="sec-title">生存作戦 — SURVIVAL OP</h2>
-    <p class="lead">30日後の救助まで、ゾンビの溢れる札幌を生き延びるサバイバルゲーム。1日1アクション。武器は<b>実際に習得したスキルだけ</b> — 現実のスキルLVがそのまま判定成功率と選べる行動になる。現実で腕を上げれば、ここでの生存率も上がる。</p>
+    <p class="lead">30日後の救助まで、ゾンビの溢れる街を生き延びる探索ゲーム。十字キー（PCは矢印/WASD）で街を歩き、建物に入って物資を漁り、森でAボタンで狩りをし、夜は拠点に戻って眠る。武器は<b>実際に習得したスキルだけ</b> — 狩猟免許がなければ銃は撃てず、浄水を知らなければ川の水で腹を下す。現実で腕を上げれば、ここでの生存率も上がる。</p>
     <div class="sim-box">
       <div class="g-stats" id="gStats"></div>
+      <div class="g-canvas-wrap">
+        <canvas id="gameCanvas" width="160" height="144"></canvas>
+        <div class="g-menu" id="gMenu" hidden></div>
+      </div>
+      <div class="dpad" id="dpad" aria-label="移動パッド">
+        <span></span><button data-d="up" aria-label="上">▲</button><span></span>
+        <button data-d="left" aria-label="左">◀</button><button data-d="act" aria-label="調べる">A</button><button data-d="right" aria-label="右">▶</button>
+        <span></span><button data-d="down" aria-label="下">▼</button><span></span>
+      </div>
       <div class="sim-log" id="gLog"></div>
-      <div class="sim-choices" id="gActions"></div>
       <button class="sim-restart" id="gRestart">▸ NEW GAME — DAY 1 から開始</button>
       <div class="tm-meta" id="gBest" style="margin-top:10px"></div>
     </div>
@@ -1523,10 +1546,11 @@ function resetSim() {
 document.getElementById("simRestart").addEventListener("click", resetSim);
 
 
-// ============================================================ survival game（実スキル連動ローグライク）
-const KEYGS = "the-day-game-v1";
+// ============================================================ survival game（ポケモン式・実スキル連動）
+const KEYGS = "the-day-game-v2";
 const KEYGB = "the-day-game-best-v1";
 const RESCUE_DAY = 30;
+const STEPS_PER_DAY = 260;
 
 function skillByIdG(id) { for (const c of CATS) for (const s of c.skills) if (s.id === id) return s; return null; }
 function gLvOf(id) { const s = skillByIdG(id); return s ? s.lv : 0; }
@@ -1535,12 +1559,21 @@ function gCat(key) { const sp = spokes().find(x => x.key === key); return sp ? s
 const roll = p => Math.random() < clamp01(p);
 const pcG = p => Math.round(clamp01(p) * 100);
 
+// ---- map ----
+const GMAP = ["TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT", "Tttttttttt,,,,,,,,,,,,,,,,ttttttttT", "Ttttttttt,,,,,,,,,,,,,,,,,,tttttttT", "Tttttttt,,BBBBB,,,,,BBBBB,,,ttttttT", "Ttttttt,,,BBCBB,,,,,BBPBB,,,,tttttT", "Ttttt,,,,,,,.,,,,,,,,,.,,,,,,tttttT", "Ttt,,,......................,,ttttT", "Tt,,,........................,,tttT", "T,,,....BBBBB.......BBBBB.....,,ttT", "T,,.....BBHBB.......BBDBB......,,tT", "T,,........................,...,,TT", "T,..........,,,,,,,.............,TT", "T,....,,,...,,,,,,,....,,,......,TT", "T,,...,,,...............,,......,TT", "T,,,BBBBB.......................,TT", "T,,,BBGBB..........,,,,.........,TT", "T,,,,,.,........,,,,,,,,........,TT", "T,,,,,.........,,,,,,,,,........,TT", "T#############.###########......,TT", "T,,,,,,,,,,,,,.,,,,,,,,,,,......,TT", "T~~~~~~~~~,,,,.,,,,~~~~~~~~~~~~~TTT", "T~~~~~~~~~~,,,.,,,~~~~~~~~~~~~~~TTT", "T~~~~~~~~~~~,,.,,~~~~~~~~~~~~~~~TTT", "T~~~~~~~~~~~~,.,~~~~~~~~~~~~~~~~TTT", "T~~~~~~~~~~~~,.,~~~~~~~~~~~~~~~~TTT", "T,,,,,,,,,,,,,.,,,,,,,,,,,,,,,,,TTT", "T,,,,,,,,,,,,,.,,,,,,,,,,,,,,,,,TTT", "T,,,,,,,,,####.####,,,,,,,,,,,,,TTT", "T,,,,,,,,,#SSS.SSS#,,,,,,,,,,,,,TTT", "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT"];
+const MAPW = GMAP[0].length, MAPH = GMAP.length;
+const TILE = 16, VW = 10, VH = 9;
+const tileAt = (x, y) => (x < 0 || y < 0 || x >= MAPW || y >= MAPH) ? "T" : GMAP[y][x];
+const walkable = ch => !"TB#~".includes(ch);
+const PLACE = { C: "コンビニ跡", P: "市立病院", D: "ホームセンター", G: "銃砲店", H: "拠点", S: "港の桟橋" };
+
 let game = load(KEYGS, null);
-if (game && !Array.isArray(game.log)) game = null;
+if (game && (typeof game.px !== "number" || !Array.isArray(game.log))) game = null;
 let gameBest = load(KEYGB, { days: 0, wins: 0 });
+let menuOpen = false;
 
 function gSave() { store(KEYGS, game); }
-function gLog(m, c) { game.log.push({ m, c: c || "" }); if (game.log.length > 80) game.log = game.log.slice(-80); }
+function gLog(m, c) { game.log.push({ m, c: c || "" }); if (game.log.length > 80) game.log = game.log.slice(-80); renderLogHud(); }
 
 function newGame() {
   game = {
@@ -1550,47 +1583,75 @@ function newGame() {
     fort: 15 + Math.round(gCat("shelter") * 30),
     vehicle: false, radioFix: false, coords: false, injured: false,
     over: false, win: false, log: [],
+    px: 10, py: 11, dir: "down", steps: 0, dusk: false, iv: 0,
+    looted: {}, zombies: [],
   };
-  gLog(`DAY 1 — アウトブレイク3日目、札幌。電気と水道は死んだ。${RESCUE_DAY}日目に救助が来る、というのが最後の放送だった。`, "day");
-  gLog(`拠点強度${game.fort}（拠点系スキル反映）／ 備蓄: 水4・食料4・医療品1・資材1`, "");
-  if (game.ammo) gLog(`狩猟免許所持 — 自宅の銃と弾${game.ammo}発を確保している。`, "ok");
+  spawnZombies();
+  gLog(`DAY 1 — アウトブレイク3日目。${RESCUE_DAY}日目に救助が来る、というのが最後の放送だった。街を探索し、夜は拠点（★の建物）に戻って眠れ。`, "day");
+  if (game.ammo) gLog(`狩猟免許所持 — 銃と弾${game.ammo}発を携行。`, "ok");
   else gLog("銃はない。狩猟免許があれば銃砲店の保管庫も開けられたが…", "");
   gSave(); renderGame();
 }
 
+function spawnZombies() {
+  game.zombies = [];
+  const n = Math.min(14, 3 + game.day);
+  let tries = 0;
+  while (game.zombies.length < n && tries++ < 400) {
+    const x = 1 + Math.floor(Math.random() * (MAPW - 2));
+    const y = 1 + Math.floor(Math.random() * (MAPH - 2));
+    const ch = tileAt(x, y);
+    if (!walkable(ch) || "CPDGHS".includes(ch)) continue;
+    if (Math.abs(x - game.px) + Math.abs(y - game.py) < 8) continue;
+    if (game.zombies.some(z => z.x === x && z.y === y)) continue;
+    game.zombies.push({ x, y });
+  }
+}
+
+// ---- combat（実スキル判定）----
 function fightG(danger) {
   if (game.ammo > 0 && gLvOf("hunt-license") >= 2) {
     game.ammo--;
     const p = 0.35 + 0.6 * gPct("marksman");
-    if (roll(p)) { gLog(`ゾンビと遭遇 — 判定〈射撃精度LV${gLvOf("marksman")}〉${pcG(p)}% → 成功。一発で沈黙させた（残弾${game.ammo}）`, "ok"); return 0; }
-    gLog(`ゾンビと遭遇 — 射撃を外した！（残弾${game.ammo}）`, "ng");
+    if (roll(p)) { gLog(`判定〈射撃精度LV${gLvOf("marksman")}〉${pcG(p)}% → 命中。一発で沈黙させた（残弾${game.ammo}）`, "ok"); return 0; }
+    gLog(`射撃を外した！（残弾${game.ammo}）`, "ng");
   } else {
-    gLog("ゾンビと遭遇 — 撃てる武器がない！", "ng");
+    gLog("撃てる武器がない！", "ng");
   }
   const esc = 0.25 + 0.4 * gCat("body") + 0.25 * gPct("melee");
-  if (roll(esc)) { gLog(`判定〈格闘LV${gLvOf("melee")}＋肉体${pcG(gCat("body"))}%〉→ 成功。突き飛ばして離脱。`, "ok"); return 0; }
+  if (roll(esc)) { gLog(`判定〈格闘LV${gLvOf("melee")}＋肉体${pcG(gCat("body"))}%〉→ 突き飛ばして離脱。`, "ok"); return 0; }
   const dmg = 10 + Math.floor(Math.random() * (10 + danger * 20));
   if (Math.random() < 0.3) game.injured = true;
   gLog(`振り切れず負傷 — HP-${dmg}${game.injured ? "（裂傷: 要治療）" : ""}`, "ng");
   return dmg;
 }
 
-function nightG() {
+function encounterZ(zi) {
+  gLog("ゾンビと接触！", "ng");
+  game.hp -= fightG(0.5);
+  game.zombies.splice(zi, 1);
+  game.iv = 3;
+  if (game.hp <= 0) { game.hp = 0; endGame(false, "路上で群れに囲まれた"); }
+}
+
+// ---- night ----
+function nightG(atBase) {
   game.water--; game.food--;
   if (game.water < 0) { game.water = 0; game.hp -= 14; gLog("水切れ — 脱水が始まった。HP-14", "ng"); }
   if (game.food < 0) { game.food = 0; game.hp -= 8; gLog("食料切れ — 空腹で消耗。HP-8", "ng"); }
   if (game.injured) { game.hp -= 5; gLog("未治療の傷が疼く。HP-5", "ng"); }
-  const hordeP = 0.08 + game.day * 0.012;
+  const fort = atBase ? game.fort : 8;
+  const hordeP = (0.08 + game.day * 0.012) * (atBase ? 1 : 1.6);
   if (game.hp > 0 && roll(hordeP)) {
-    if (roll(game.fort / 100)) {
-      game.fort = Math.max(0, game.fort - 5);
-      gLog(`夜 — 群れが拠点を叩いたが、バリケードが持ちこたえた（強度${game.fort}）`, "ok");
+    if (roll(fort / 100)) {
+      if (atBase) game.fort = Math.max(0, game.fort - 5);
+      gLog(`夜 — 群れが迫ったが、${atBase ? `バリケード（強度${game.fort}）が` : "隠れ場所が"}持ちこたえた。`, "ok");
     } else {
       let dmg = 12 + Math.floor(Math.random() * 18);
       if (game.ammo > 0) { game.ammo--; dmg = Math.max(5, dmg - Math.round(20 * gPct("marksman"))); }
-      game.fort = Math.max(0, game.fort - 15);
+      if (atBase) game.fort = Math.max(0, game.fort - 15);
       game.hp -= dmg;
-      gLog(`夜 — 侵入を許した！応戦でHP-${dmg}、拠点強度-15`, "ng");
+      gLog(`夜 — ${atBase ? "侵入を許した！拠点強度-15、" : "野営地を襲われた！"}応戦でHP-${dmg}`, "ng");
     }
   }
   if (game.radioFix && !game.coords && roll(0.3)) {
@@ -1600,11 +1661,14 @@ function nightG() {
   if (game.hp <= 0) { game.hp = 0; endGame(false, "力尽きた"); return; }
   game.day++;
   if (game.day > RESCUE_DAY) { endGame(true, "予告どおり救助部隊が到達した"); return; }
-  gLog(`— DAY ${game.day}（残り${RESCUE_DAY - game.day + 1}日）—`, "day");
+  game.steps = 0; game.dusk = false;
+  spawnZombies();
+  gLog(`— DAY ${game.day}（残り${RESCUE_DAY - game.day + 1}日）— 街のゾンビは${game.zombies.length}体に増えた。`, "day");
 }
 
 function endGame(win, why) {
   game.over = true; game.win = win;
+  closeMenu();
   const d = win ? RESCUE_DAY : game.day;
   if (win) { gameBest.wins++; gLog(`■ 生還 — ${why}。${d}日間を生き延びた。これが実スキルの力だ。`, "day"); }
   else gLog(`■ 死亡 — ${why}。生存${d}日。現実のスキルを上げてから再挑戦しろ。`, "ng");
@@ -1612,141 +1676,353 @@ function endGame(win, why) {
   store(KEYGB, gameBest);
 }
 
-function lootRunG(danger, loot) {
-  if (roll(danger)) game.hp -= fightG(danger);
-  if (game.hp <= 0) { game.hp = 0; endGame(false, "探索中に囲まれた"); gSave(); renderGame(); return; }
-  loot();
-  nightG(); gSave(); renderGame();
+// ---- menus ----
+const gMenu = document.getElementById("gMenu");
+function openMenu(title, opts) {
+  menuOpen = true;
+  gMenu.hidden = false;
+  gMenu.innerHTML = `<h4>${title}</h4><div class="sim-choices"></div>`;
+  const box = gMenu.querySelector(".sim-choices");
+  opts.forEach(o => {
+    const b = document.createElement("button");
+    b.innerHTML = `▸ ${o.label}${o.sub ? ` <span class="pct">${o.sub}</span>` : ""}`;
+    b.addEventListener("click", () => { closeMenu(); o.fn && o.fn(); afterAction(); });
+    box.appendChild(b);
+  });
+}
+function closeMenu() { menuOpen = false; gMenu.hidden = true; gMenu.innerHTML = ""; }
+function afterAction() { if (game.hp <= 0 && !game.over) { game.hp = 0; endGame(false, "力尽きた"); } gSave(); renderGame(); }
+
+function spendHours(n) {
+  game.steps += n;
+  checkDusk();
+}
+function checkDusk() {
+  if (game.steps >= STEPS_PER_DAY && !game.over) {
+    const atBase = tileAt(game.px, game.py) === "H";
+    gLog(atBase ? "日没 — 拠点で夜を迎えた。" : "日没 — 拠点に戻れなかった。物陰で夜を明かす…", atBase ? "" : "ng");
+    nightG(atBase);
+  } else if (game.steps >= STEPS_PER_DAY - 60 && !game.dusk) {
+    game.dusk = true;
+    gLog("日が傾いてきた。拠点（★）に戻って眠る時間だ。", "day");
+  }
 }
 
-function gameActions() {
-  const A = [];
-  const add = (label, sub, fn) => A.push({ label, sub, fn });
+// ---- location events（旧アクションのマップ版）----
+function lootPlace(key, danger, loot) {
+  if (game.looted[key] === game.day) { gLog(`${PLACE[key]} — 今日はもう漁った。また明日だ。`, ""); return; }
+  game.looted[key] = game.day;
+  if (roll(danger)) game.hp -= fightG(danger);
+  if (game.hp <= 0) { game.hp = 0; endGame(false, PLACE[key] + "で囲まれた"); return; }
+  loot();
+  spendHours(35);
+}
 
-  add("コンビニ跡を漁る", "食料・水 ／ 遭遇率25%", () => lootRunG(0.25, () => {
-    const f = 1 + (Math.random() < 0.5 ? 1 : 0), w = 1 + (Math.random() < 0.5 ? 1 : 0);
-    game.food += f; game.water += w; gLog(`収穫: 食料+${f}・水+${w}`, "ok");
-  }));
-  add("住宅街を探索", "食料・資材 ／ 遭遇率35%", () => lootRunG(0.35, () => {
-    game.food += 1; game.mats += 1;
-    if (Math.random() < 0.3) { game.fuel += 1; gLog("収穫: 食料+1・資材+1・燃料+1", "ok"); }
-    else gLog("収穫: 食料+1・資材+1", "ok");
-  }));
-  add("病院を漁る", "医療品 ／ 遭遇率55%", () => lootRunG(0.55, () => {
-    game.meds += 2; gLog("収穫: 医療品+2", "ok");
-  }));
-  add("ホームセンターへ", "資材・燃料 ／ 遭遇率35%", () => lootRunG(0.35, () => {
-    game.mats += 2;
-    if (Math.random() < 0.5) { game.fuel += 1; gLog("収穫: 資材+2・燃料+1", "ok"); }
-    else gLog("収穫: 資材+2", "ok");
-  }));
-  if (gLvOf("hunt-license") >= 2)
-    add("銃砲店を目指す", "弾薬 ／ 遭遇率45%〈狩猟免許で保管庫を開錠〉", () => lootRunG(0.45, () => {
-      const a = 4 + Math.floor(Math.random() * 5);
-      game.ammo += a; gLog(`収穫: 弾薬+${a}（免許者の知識が生きた）`, "ok");
-    }));
-  if (gLvOf("hunt-license") >= 2 && game.ammo > 0) {
-    const p = 0.25 + 0.7 * gPct("marksman");
-    add("山で狩りに出る", `弾-1 ／〈射撃LV${gLvOf("marksman")}〉${pcG(p)}%`, () => {
-      game.ammo--;
-      if (roll(p)) {
-        let f = 5, msg = "エゾシカを仕留めた！食料+5";
-        if (gLvOf("butcher") >= 3) { f += 3; msg += `〈解体LV${gLvOf("butcher")}〉で無駄なく精肉+3`; }
-        game.food += f; gLog(msg, "ok");
-      } else {
-        gLog("獲物を外した。", "ng");
-        if (gLvOf("map") < 2 && roll(0.35)) { game.hp -= 12; gLog("読図ができず日没まで山を彷徨った。HP-12", "ng"); }
-      }
-      if (game.hp <= 0) { game.hp = 0; endGame(false, "山で行き倒れた"); }
-      else nightG();
-      gSave(); renderGame();
-    });
+function enterTile(ch) {
+  if (ch === "C") openMenu("コンビニ跡", [
+    { label: "物資を漁る", sub: "食料・水 ／ 遭遇率25%", fn: () => lootPlace("C", 0.25, () => {
+        const f = 1 + (Math.random() < 0.5 ? 1 : 0), w = 1 + (Math.random() < 0.5 ? 1 : 0);
+        game.food += f; game.water += w; gLog(`収穫: 食料+${f}・水+${w}`, "ok"); }) },
+    { label: "立ち去る" },
+  ]);
+  else if (ch === "P") openMenu("市立病院", [
+    { label: "医薬品を探す", sub: "医療品 ／ 遭遇率55%", fn: () => lootPlace("P", 0.55, () => {
+        game.meds += 2; gLog("収穫: 医療品+2", "ok"); }) },
+    { label: "立ち去る" },
+  ]);
+  else if (ch === "D") openMenu("ホームセンター", [
+    { label: "資材を集める", sub: "資材・燃料 ／ 遭遇率35%", fn: () => lootPlace("D", 0.35, () => {
+        game.mats += 2;
+        if (Math.random() < 0.5) { game.fuel += 1; gLog("収穫: 資材+2・燃料+1", "ok"); }
+        else gLog("収穫: 資材+2", "ok"); }) },
+    { label: "立ち去る" },
+  ]);
+  else if (ch === "G") {
+    const opts = [];
+    if (gLvOf("hunt-license") >= 2)
+      opts.push({ label: "保管庫を開ける", sub: "弾薬 ／ 遭遇率45%〈狩猟免許〉", fn: () => lootPlace("G", 0.45, () => {
+        const a = 4 + Math.floor(Math.random() * 5);
+        game.ammo += a; gLog(`収穫: 弾薬+${a}（免許者の知識が生きた）`, "ok"); }) });
+    else opts.push({ label: "保管庫は開かない", sub: "狩猟免許が要る", fn: () => gLog("頑丈な保管庫だ。開け方の見当もつかない…（狩猟免許があれば）", "ng") });
+    opts.push({ label: "立ち去る" });
+    openMenu("銃砲店", opts);
   }
-  if (gLvOf("forage") >= 1)
-    add("山菜・キノコ採取", `〈判別LV${gLvOf("forage")}〉`, () => {
-      const f = 1 + Math.floor(gLvOf("forage") / 2);
-      game.food += f; gLog(`山の恵み: 食料+${f}`, "ok");
-      if (gLvOf("forage") < 3 && roll(0.18)) { game.hp -= 18; gLog("判別ミス — 毒キノコだった。HP-18", "ng"); }
-      if (game.hp <= 0) { game.hp = 0; endGame(false, "毒に倒れた"); }
-      else nightG();
-      gSave(); renderGame();
-    });
-  {
-    const wl = gLvOf("water");
-    add("川で水を確保", wl >= 2 ? `〈浄水LV${wl}〉安全に水+3` : "浄水知識なし ／ 生水リスク", () => {
-      if (wl >= 2) { game.water += 3; gLog(`〈浄水LV${wl}〉煮沸・濾過して水+3`, "ok"); }
-      else {
-        game.water += 1; gLog("生水を汲んだ。水+1", "ok");
-        if (roll(0.3)) { game.hp -= 10; gLog("腹を下した。HP-10", "ng"); }
-      }
-      if (gLvOf("fishing") >= 2) { game.food += 1; gLog(`〈釣りLV${gLvOf("fishing")}〉ついでに一匹。食料+1`, "ok"); }
-      if (game.hp <= 0) { game.hp = 0; endGame(false, "汚染水にやられた"); }
-      else nightG();
-      gSave(); renderGame();
-    });
-  }
+  else if (ch === "H") openBase();
+  else if (ch === "S") openDock();
+}
+
+function openBase() {
+  const opts = [];
+  const heal = 12 + (gLvOf("firstaid") >= 2 ? 10 : 0) + (game.meds > 0 ? 15 : 0);
+  opts.push({ label: "眠る（1日を終える）", sub: `HP+${heal}${game.meds > 0 ? " ／ 医療品-1" : ""}`, fn: () => {
+    if (game.meds > 0) game.meds--;
+    game.hp = Math.min(100, game.hp + heal);
+    gLog(`休息。HP+${heal}${gLvOf("firstaid") >= 2 ? "〈救命講習の知識〉" : ""}`, "ok");
+    if (game.injured) {
+      const p = 0.35 + 0.6 * gPct("wound");
+      if (roll(p)) { game.injured = false; gLog(`〈外傷ケアLV${gLvOf("wound")}〉裂傷を処置した。`, "ok"); }
+      else gLog("裂傷は塞がりきらない…", "ng");
+    }
+    nightG(true);
+  }});
   if (game.mats >= 1) {
     const gain = 8 + gLvOf("carpentry") * 2 + (gLvOf("architect") >= 2 ? 6 : 0) + (gLvOf("welding") >= 2 ? 4 : 0) + gLvOf("barricade") * 2;
-    add("拠点を補強する", `資材-1 ／ 強度+${gain}`, () => {
+    opts.push({ label: "拠点を補強する", sub: `資材-1 ／ 強度+${gain}`, fn: () => {
       game.mats--; game.fort = Math.min(95, game.fort + gain);
       gLog(`補強完了〈大工LV${gLvOf("carpentry")}／建築士${gLvOf("architect") >= 2 ? "○" : "×"}／溶接${gLvOf("welding") >= 2 ? "○" : "×"}〉→ 強度${game.fort}`, "ok");
-      nightG(); gSave(); renderGame();
-    });
-  }
-  {
-    const heal = 12 + (gLvOf("firstaid") >= 2 ? 10 : 0) + (game.meds > 0 ? 15 : 0);
-    add("休息・治療", `HP+${heal}${game.meds > 0 ? " ／ 医療品-1" : ""}${game.injured ? " ／ 裂傷処置を試みる" : ""}`, () => {
-      if (game.meds > 0) game.meds--;
-      game.hp = Math.min(100, game.hp + heal);
-      gLog(`休息。HP+${heal}${gLvOf("firstaid") >= 2 ? "〈救命講習の知識が効いた〉" : ""}`, "ok");
-      if (game.injured) {
-        const p = 0.35 + 0.6 * gPct("wound");
-        if (roll(p)) { game.injured = false; gLog(`〈外傷ケアLV${gLvOf("wound")}〉裂傷を処置した。`, "ok"); }
-        else gLog("裂傷は塞がりきらない…", "ng");
-      }
-      nightG(); gSave(); renderGame();
-    });
+      spendHours(35);
+    }});
   }
   if (!game.vehicle && gLvOf("mechanic") >= 1 && game.mats >= 2) {
     const p = 0.3 + 0.65 * gPct("mechanic");
-    add("放置バイクを修理", `資材-2 ／〈整備LV${gLvOf("mechanic")}〉${pcG(p)}%`, () => {
+    opts.push({ label: "裏のバイクを修理", sub: `資材-2 ／〈整備LV${gLvOf("mechanic")}〉${pcG(p)}%`, fn: () => {
       game.mats -= 2;
-      if (roll(p)) { game.vehicle = true; gLog("エンジン始動！機動力を確保した。", "ok"); }
+      if (roll(p)) { game.vehicle = true; gLog("エンジン始動！陸路の脱出手段を確保。", "ok"); }
       else gLog("直りきらない。部品がまだ足りない…", "ng");
-      nightG(); gSave(); renderGame();
-    });
+      spendHours(35);
+    }});
   }
   if (!game.radioFix && gLvOf("radio") >= 1 && game.mats >= 1)
-    add("無線機を組む", `資材-1 ／〈無線LV${gLvOf("radio")}〉`, () => {
+    opts.push({ label: "無線機を組む", sub: `資材-1 ／〈無線LV${gLvOf("radio")}〉`, fn: () => {
       game.mats--; game.radioFix = true;
       gLog("無線機が生きた。今夜から救助周波数をスキャンする。", "ok");
-      nightG(); gSave(); renderGame();
-    });
-  if (game.coords) {
-    const p = clamp01((game.vehicle ? 0.45 : 0.15) + 0.4 * gCat("mobility") + (game.fuel >= 2 ? 0.1 : 0));
-    add("港の集結地点へ脱出", `最終判定${pcG(p)}%${game.vehicle ? "" : "（車両なし: 徒歩は無謀）"}`, () => {
-      if (roll(p)) { endGame(true, "封鎖線を突破し、集結地点に到達"); }
-      else {
-        game.hp -= 30; gLog("突破失敗 — 群れに揉まれ拠点へ撤退。HP-30", "ng");
-        if (game.hp <= 0) { game.hp = 0; endGame(false, "脱出行の途中で力尽きた"); }
-        else nightG();
-      }
-      gSave(); renderGame();
-    });
+      spendHours(25);
+    }});
+  if (game.coords && game.vehicle) {
+    const p = clamp01(0.45 + 0.4 * gCat("mobility") + (game.fuel >= 2 ? 0.1 : 0));
+    opts.push({ label: "バイクで集結地点へ脱出", sub: `最終判定${pcG(p)}%`, fn: () => {
+      if (roll(p)) endGame(true, "封鎖線を陸路で突破し、集結地点に到達");
+      else { game.hp -= 30; gLog("突破失敗 — 群れに揉まれ拠点へ撤退。HP-30", "ng"); spendHours(60); }
+    }});
   }
-  return A;
+  opts.push({ label: "出発する" });
+  openMenu("拠点 ★", opts);
+}
+
+function openDock() {
+  const opts = [];
+  if (!game.coords) opts.push({ label: "海を眺める", sub: "座標がない", fn: () => gLog("係留された小型船がある。集結地点の座標さえ分かれば…（無線が要る）", "") });
+  else if (gLvOf("boat") >= 1) {
+    const p = clamp01(0.35 + 0.55 * gPct("boat") + 0.1 * gCat("mobility"));
+    opts.push({ label: "船を出して海路で脱出", sub: `〈船舶LV${gLvOf("boat")}〉${pcG(p)}%`, fn: () => {
+      if (roll(p)) endGame(true, "ゾンビの泳げない海へ。海路で集結地点に到達");
+      else { game.hp -= 20; gLog("出港failed — 座礁しかけて引き返した。HP-20", "ng"); spendHours(60); }
+    }});
+  } else opts.push({ label: "船は動かせない", sub: "小型船舶免許が要る", fn: () => gLog("船はあるのに操船の仕方がわからない…（小型船舶免許があれば海路で脱出できた）", "ng") });
+  opts.push({ label: "立ち去る" });
+  openMenu("港の桟橋", opts);
+}
+
+function actButton() {
+  if (menuOpen || game.over) return;
+  const ch = tileAt(game.px, game.py);
+  if ("CPDGHS".includes(ch)) { enterTile(ch); return; }
+  const nearWater = [[0,1],[0,-1],[1,0],[-1,0]].some(d => tileAt(game.px + d[0], game.py + d[1]) === "~");
+  if (ch === "t") {
+    const opts = [];
+    if (gLvOf("hunt-license") >= 2 && game.ammo > 0) {
+      const p = 0.25 + 0.7 * gPct("marksman");
+      opts.push({ label: "狩りをする", sub: `弾-1 ／〈射撃LV${gLvOf("marksman")}〉${pcG(p)}%`, fn: () => {
+        game.ammo--;
+        if (roll(p)) {
+          let f = 5, msg = "エゾシカを仕留めた！食料+5";
+          if (gLvOf("butcher") >= 3) { f += 3; msg += `〈解体LV${gLvOf("butcher")}〉で無駄なく精肉+3`; }
+          game.food += f; gLog(msg, "ok");
+        } else {
+          gLog("獲物を外した。", "ng");
+          if (gLvOf("map") < 2 && roll(0.35)) { game.hp -= 12; gLog("読図ができず森を彷徨った。HP-12", "ng"); }
+        }
+        spendHours(40);
+      }});
+    }
+    if (gLvOf("forage") >= 1)
+      opts.push({ label: "山菜・キノコ採取", sub: `〈判別LV${gLvOf("forage")}〉`, fn: () => {
+        const f = 1 + Math.floor(gLvOf("forage") / 2);
+        game.food += f; gLog(`山の恵み: 食料+${f}`, "ok");
+        if (gLvOf("forage") < 3 && roll(0.18)) { game.hp -= 18; gLog("判別ミス — 毒キノコだった。HP-18", "ng"); }
+        spendHours(30);
+      }});
+    if (!opts.length) { gLog("森だ。狩りの腕も山菜の知識もない今は、ただの茂みだ。", ""); return; }
+    opts.push({ label: "やめる" });
+    openMenu("森", opts);
+    return;
+  }
+  if (nearWater) {
+    const wl = gLvOf("water");
+    openMenu("川辺", [
+      { label: "水を確保する", sub: wl >= 2 ? `〈浄水LV${wl}〉安全に水+3` : "浄水知識なし ／ 生水リスク", fn: () => {
+        if (wl >= 2) { game.water += 3; gLog(`〈浄水LV${wl}〉煮沸・濾過して水+3`, "ok"); }
+        else {
+          game.water += 1; gLog("生水を汲んだ。水+1", "ok");
+          if (roll(0.3)) { game.hp -= 10; gLog("腹を下した。HP-10", "ng"); }
+        }
+        if (gLvOf("fishing") >= 2) { game.food += 1; gLog(`〈釣りLV${gLvOf("fishing")}〉ついでに一匹。食料+1`, "ok"); }
+        spendHours(25);
+      }},
+      { label: "やめる" },
+    ]);
+    return;
+  }
+  gLog("ここには何もない。", "");
+}
+
+// ---- movement ----
+function tryMove(dx, dy) {
+  if (menuOpen || !game || game.over) return;
+  game.dir = dx < 0 ? "left" : dx > 0 ? "right" : dy < 0 ? "up" : "down";
+  const nx = game.px + dx, ny = game.py + dy;
+  const ch = tileAt(nx, ny);
+  if (walkable(ch)) {
+    const zi = game.zombies.findIndex(z => z.x === nx && z.y === ny);
+    if (zi >= 0 && game.iv <= 0) { encounterZ(zi); gSave(); renderGame(); return; }
+    game.px = nx; game.py = ny;
+    game.steps++;
+    if (game.iv > 0) game.iv--;
+    if ("CPDGHS".includes(ch)) enterTile(ch);
+    zombiesStep();
+    checkDusk();
+    if (game.steps % 12 === 0) gSave();
+  }
+  renderGame();
+}
+
+function zombiesStep() {
+  if (game.over) return;
+  for (let i = 0; i < game.zombies.length; i++) {
+    const z = game.zombies[i];
+    const dx = game.px - z.x, dy = game.py - z.y;
+    const dist = Math.abs(dx) + Math.abs(dy);
+    let mx = 0, my = 0;
+    if (dist <= 6) {
+      if (Math.abs(dx) >= Math.abs(dy)) mx = Math.sign(dx); else my = Math.sign(dy);
+    } else if (Math.random() < 0.4) {
+      const dirs = [[1,0],[-1,0],[0,1],[0,-1]][Math.floor(Math.random() * 4)];
+      mx = dirs[0]; my = dirs[1];
+    }
+    if (!mx && !my) continue;
+    const nx = z.x + mx, ny = z.y + my;
+    const ch = tileAt(nx, ny);
+    if (!walkable(ch) || "CPDGHS".includes(ch)) continue;
+    if (game.zombies.some((o, j) => j !== i && o.x === nx && o.y === ny)) continue;
+    if (nx === game.px && ny === game.py) {
+      if (game.iv <= 0) { encounterZ(i); if (game.over) return; i--; }
+      continue;
+    }
+    z.x = nx; z.y = ny;
+  }
+}
+
+// ---- rendering ----
+const gCv = document.getElementById("gameCanvas");
+const gCtx = gCv.getContext("2d");
+const tileCache = {};
+function tileSprite(ch) {
+  if (tileCache[ch]) return tileCache[ch];
+  const c = document.createElement("canvas");
+  c.width = TILE; c.height = TILE;
+  const x = c.getContext("2d");
+  const R = (px, py, w, h, col) => { x.fillStyle = col; x.fillRect(px, py, w, h); };
+  R(0, 0, 16, 16, "#3c4030");
+  if (ch === "." ) {
+    R(0, 0, 16, 16, "#43482f");
+    R(3, 4, 1, 1, "#525840"); R(11, 2, 1, 1, "#525840"); R(7, 9, 1, 1, "#525840"); R(13, 12, 1, 1, "#525840"); R(2, 13, 1, 1, "#525840");
+  } else if (ch === ",") {
+    R(0, 0, 16, 16, "#39472c");
+    R(2, 3, 2, 1, "#4d6238"); R(9, 5, 2, 1, "#4d6238"); R(5, 10, 2, 1, "#4d6238"); R(12, 12, 2, 1, "#4d6238");
+  } else if (ch === "t") {
+    R(0, 0, 16, 16, "#2f3d24");
+    R(1, 2, 2, 2, "#44602f"); R(8, 1, 2, 2, "#44602f"); R(4, 7, 2, 2, "#44602f"); R(11, 6, 2, 2, "#44602f"); R(2, 12, 2, 2, "#44602f"); R(9, 11, 2, 2, "#44602f"); R(13, 13, 2, 2, "#44602f");
+  } else if (ch === "T") {
+    R(0, 0, 16, 16, "#232d1a");
+    R(2, 1, 12, 10, "#33502f"); R(3, 0, 10, 3, "#33502f");
+    R(3, 2, 4, 3, "#456b3c"); R(9, 4, 3, 2, "#456b3c");
+    R(6, 11, 4, 5, "#4a3b28");
+  } else if (ch === "B") {
+    R(0, 0, 16, 16, "#57514a");
+    R(0, 0, 16, 1, "#6a635a"); R(0, 5, 16, 1, "#463f38"); R(0, 10, 16, 1, "#463f38"); R(0, 15, 16, 1, "#3a352e");
+    R(4, 1, 1, 4, "#463f38"); R(10, 6, 1, 4, "#463f38"); R(6, 11, 1, 4, "#463f38");
+  } else if (ch === "#") {
+    R(0, 0, 16, 16, "#3c4030");
+    R(0, 4, 16, 3, "#6a5636"); R(0, 10, 16, 3, "#6a5636");
+    R(2, 2, 2, 12, "#584626"); R(12, 2, 2, 12, "#584626");
+  } else if (ch === "~") {
+    R(0, 0, 16, 16, "#1e3a44");
+    R(2, 4, 5, 1, "#2c5666"); R(9, 8, 5, 1, "#2c5666"); R(4, 12, 5, 1, "#2c5666");
+  } else if (ch === "S") {
+    R(0, 0, 16, 16, "#1e3a44");
+    R(0, 0, 16, 16, "#6a5636"); R(0, 3, 16, 1, "#584626"); R(0, 7, 16, 1, "#584626"); R(0, 11, 16, 1, "#584626"); R(0, 15, 16, 1, "#584626");
+  } else if ("CPDGH".includes(ch)) {
+    R(0, 0, 16, 16, "#57514a");
+    R(0, 0, 16, 2, "#6a635a");
+    R(4, 5, 8, 11, "#2a2620");
+    R(10, 10, 1, 2, "#8a7a58");
+    const sign = { C: "#e8a13c", P: "#c1443a", D: "#8a6a3c", G: "#26221c", H: "#e7e2cf" }[ch];
+    R(5, 2, 6, 3, sign);
+    if (ch === "P") { R(7, 2, 2, 3, "#e7e2cf"); R(5, 3, 6, 1, "#e7e2cf"); R(7, 2, 2, 3, "#c1443a"); R(6, 3, 4, 1, "#e7e2cf"); R(7, 2, 2, 3, "#c1443a"); R(7, 2, 2, 3, "#e7e2cf"); }
+    if (ch === "H") { R(7, 3, 2, 1, "#c1443a"); }
+  }
+  tileCache[ch] = c;
+  return c;
+}
+
+function drawHero(dx, dy) {
+  const R = (px, py, w, h, col) => { gCtx.fillStyle = col; gCtx.fillRect(dx + px, dy + py, w, h); };
+  R(4, 1, 8, 3, gCat("mobility") >= 0.3 ? "#e8a13c" : "#3a2f23");
+  R(4, 4, 8, 4, "#c99b6f");
+  if (game.dir !== "up") {
+    const ex = game.dir === "left" ? -1 : game.dir === "right" ? 1 : 0;
+    R(6 + ex, 5, 1, 1, "#1c1c1c"); R(9 + ex, 5, 1, 1, "#1c1c1c");
+    R(6 + ex, 7, 4, 1, "#3a2f23");
+  }
+  R(3, 8, 10, 5, "#4c5a36");
+  if (gCat("combat") >= 0.3) R(2, 6, 2, 8, "#2f2f28");
+  R(5, 13, 2, 3, "#26221c"); R(9, 13, 2, 3, "#26221c");
+}
+function drawZombie(dx, dy) {
+  const R = (px, py, w, h, col) => { gCtx.fillStyle = col; gCtx.fillRect(dx + px, dy + py, w, h); };
+  R(4, 2, 8, 5, "#8a9a72");
+  R(6, 3, 1, 1, "#1a1208"); R(9, 3, 1, 1, "#1a1208");
+  R(6, 5, 4, 1, "#5c6a4a");
+  R(3, 7, 10, 6, "#5c6a4a");
+  R(1, 8, 2, 2, "#8a9a72"); R(13, 8, 2, 2, "#8a9a72");
+  R(5, 13, 2, 3, "#3c4430"); R(9, 13, 2, 3, "#3c4430");
+}
+
+function drawFrame() {
+  if (!game) return;
+  const camX = Math.max(0, Math.min(game.px - Math.floor(VW / 2), MAPW - VW));
+  const camY = Math.max(0, Math.min(game.py - Math.floor(VH / 2), MAPH - VH));
+  for (let vy = 0; vy < VH; vy++)
+    for (let vx = 0; vx < VW; vx++)
+      gCtx.drawImage(tileSprite(tileAt(camX + vx, camY + vy)), vx * TILE, vy * TILE);
+  game.zombies.forEach(z => {
+    const vx = z.x - camX, vy = z.y - camY;
+    if (vx >= 0 && vx < VW && vy >= 0 && vy < VH) drawZombie(vx * TILE, vy * TILE);
+  });
+  drawHero((game.px - camX) * TILE, (game.py - camY) * TILE);
+  if (game.dusk || game.over) {
+    gCtx.fillStyle = game.over ? "rgba(10,6,4,0.5)" : "rgba(10,10,25,0.25)";
+    gCtx.fillRect(0, 0, VW * TILE, VH * TILE);
+  }
+}
+
+function renderLogHud() {
+  const lg = document.getElementById("gLog");
+  if (!lg || !game) return;
+  lg.innerHTML = game.log.slice(-14).map(l => `<p class="${l.c ? "sim-" + l.c : ""}">${l.m}</p>`).join("");
+  lg.scrollTop = lg.scrollHeight;
 }
 
 function renderGame() {
   const st = document.getElementById("gStats");
   if (!st) return;
   if (!game) { newGame(); return; }
-  const lg = document.getElementById("gLog");
-  const ac = document.getElementById("gActions");
   const hpCls = game.hp <= 30 ? "ng" : game.hp >= 70 ? "ok" : "";
+  const hrs = Math.max(0, STEPS_PER_DAY - game.steps);
   st.innerHTML = [
     `<span class="gs">DAY <b>${game.day}</b>/${RESCUE_DAY}</span>`,
     `<span class="gs ${hpCls}">HP <b>${game.hp}</b></span>`,
+    `<span class="gs ${game.dusk ? "ng" : ""}">刻 <b>${hrs}</b></span>`,
     `<span class="gs">水 <b>${game.water}</b></span>`,
     `<span class="gs">食 <b>${game.food}</b></span>`,
     `<span class="gs">弾 <b>${game.ammo}</b></span>`,
@@ -1758,21 +2034,33 @@ function renderGame() {
     `<span class="gs">${game.radioFix ? (game.coords ? "座標入手" : "無線ON") : "無線×"}</span>`,
     game.injured ? `<span class="gs ng">負傷</span>` : "",
   ].join("");
-  lg.innerHTML = game.log.slice(-16).map(l => `<p class="${l.c ? "sim-" + l.c : ""}">${l.m}</p>`).join("");
-  lg.scrollTop = lg.scrollHeight;
-  ac.innerHTML = "";
-  if (!game.over) {
-    gameActions().forEach(a => {
-      const b = document.createElement("button");
-      b.innerHTML = `▸ ${a.label} <span class="pct">${a.sub}</span>`;
-      b.addEventListener("click", a.fn);
-      ac.appendChild(b);
-    });
-  }
-  document.getElementById("gBest").textContent = `BEST: ${gameBest.days}日 ／ 生還 ${gameBest.wins}回`;
+  renderLogHud();
+  drawFrame();
+  document.getElementById("gBest").textContent = `BEST: ${gameBest.days}日 ／ 生還 ${gameBest.wins}回 ／ 操作: 十字キー移動・A=調べる（森・川・建物）`;
 }
+
+// ---- input ----
 document.getElementById("gRestart").addEventListener("click", () => {
-  if (!game || game.over || confirm("進行中の作戦を破棄してDAY 1からやり直す？")) newGame();
+  if (!game || game.over || confirm("進行中の作戦を破棄してDAY 1からやり直す？")) { closeMenu(); newGame(); }
+});
+const DPAD_DIRS = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
+let holdTimer = null;
+document.querySelectorAll("#dpad button").forEach(b => {
+  const d = b.dataset.d;
+  const fire = () => { if (d === "act") actButton(); else tryMove(...DPAD_DIRS[d]); if (game) gSave(); };
+  b.addEventListener("pointerdown", e => {
+    e.preventDefault();
+    fire();
+    if (d !== "act") { clearInterval(holdTimer); holdTimer = setInterval(fire, 160); }
+  });
+  ["pointerup", "pointerleave", "pointercancel"].forEach(ev => b.addEventListener(ev, () => clearInterval(holdTimer)));
+});
+document.addEventListener("keydown", e => {
+  if (!document.getElementById("panel-sim").classList.contains("active")) return;
+  const k = e.key.toLowerCase();
+  const map = { arrowup: "up", w: "up", arrowdown: "down", s: "down", arrowleft: "left", a: "left", arrowright: "right", d: "right" };
+  if (map[k]) { e.preventDefault(); tryMove(...DPAD_DIRS[map[k]]); }
+  else if (k === "enter" || k === " " || k === "z") { e.preventDefault(); actButton(); }
 });
 
 // ============================================================ profile
