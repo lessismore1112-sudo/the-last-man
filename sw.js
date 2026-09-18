@@ -1,5 +1,5 @@
-const CACHE = "last-man-v11-mobile";
-const ASSETS = ["./", "./index.html", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png", "./astra.css", "./astra.js", "./game-launcher.js", "./game.html", "./game.css?v=mobile-1", "./game.js?v=mobile-1", "./game-rules.mjs", "./scope-shot.mjs", "./vendor/three.module.js"];
+const CACHE = "last-man-v12-multitouch";
+const ASSETS = ["./", "./index.html", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png", "./astra.css", "./astra.js", "./game-launcher.js", "./game.html", "./game.css?v=mobile-2", "./game.js?v=mobile-2", "./game-rules.mjs", "./scope-shot.mjs", "./touch-controls.mjs", "./vendor/three.module.js"];
 self.addEventListener("install", e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting()));
 });

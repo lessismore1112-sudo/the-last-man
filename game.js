@@ -1,3 +1,4 @@
+import {bindPress,bindHold,bindChoice} from './touch-controls.mjs';
 import * as THREE from './vendor/three.module.js';
 import {traceScopeShot,dragAim} from './scope-shot.mjs';
 import {deriveFitness,WEAPONS,canEquip,attackPlan,hitDamage,lineBlocked,staminaStep} from './game-rules.mjs';
@@ -72,6 +73,7 @@ const positions=new Float32Array(360);for(let i=0;i<120;i++){positions[i*3]=(rnd
 // Real-time field controls: terrain clicks move, actor clicks target and attack.
 let destination=null,waypoints=[],selected=null,runToggle=false,readyAt=0,damageReady=0,simTime=0,lastNoise=-100,noticeAt=0;
 let stamina={value:state.stamina,exhausted:!!state.exhausted,delay:0,sprinting:false};
+let releaseRun=()=>{};
 const stick={x:0,y:0,id:null};
 const isTouch=()=>matchMedia('(pointer:coarse)').matches||navigator.maxTouchPoints>0;
 const keys=new Set(),raycaster=new THREE.Raycaster(),pointer=new THREE.Vector2();
@@ -95,7 +97,7 @@ function positionScopeCamera(){
   camera.updateMatrixWorld(true);
 }
 function exitScope(){
-  if(!scoped)return;scoped=false;scopeDrag=null;recoil=0;keys.clear();resetStick();player.visible=true;
+  if(!scoped)return;scoped=false;scopeDrag=null;recoil=0;keys.clear();resetStick();releaseRun();player.visible=true;
   document.body.classList.remove('scoped');$('#scopeOverlay').hidden=true;camera.fov=43;camera.updateProjectionMatrix();
   updateEquipment();
 }
@@ -103,7 +105,7 @@ function toggleScope(){
   if(scoped){exitScope();return;}
   if(mode!=='play'||state.weapon!=='rifle'||!canEquip('rifle',skills.levels))return;
   if(onBike||inside){notice(onBike?'バイクから降りてスコープを覗いてください。':'屋外でスコープを使用してください。');return;}
-  scoped=true;clearDestination();selected=null;aimRing.visible=false;keys.clear();resetStick();runToggle=false;stamina.sprinting=false;
+  scoped=true;clearDestination();selected=null;aimRing.visible=false;keys.clear();resetStick();releaseRun();runToggle=false;stamina.sprinting=false;
   scopeYaw=player.rotation.y;scopePitch=0;recoil=0;player.visible=false;
   document.body.classList.add('scoped');$('#scopeOverlay').hidden=false;setScopeZoom();positionScopeCamera();updateEquipment();
   $('#scopeFeedback').textContent='ドラッグで照準を合わせてください';
@@ -163,14 +165,14 @@ function updateVitals(){
   $('#health').textContent=`${Math.ceil(state.hp)} / ${fitness.maxHP}`;$('#hpbar').style.width=state.hp/fitness.maxHP*100+'%';
   $('#staminaValue').textContent=`${Math.floor(stamina.value)} / ${fitness.maxStamina}`;$('#staminaBar').style.width=stamina.value/fitness.maxStamina*100+'%';
   $('#staminaTrack').setAttribute('aria-valuenow',Math.floor(stamina.value));$('#staminaTrack').setAttribute('aria-valuemax',fitness.maxStamina);
-  $('#runState').textContent=stamina.exhausted?'息切れ / 25%まで回復待ち':stamina.sprinting?'SPRINTING':runToggle?'RUN ON / 移動すると走る':'STAMINA';
-  $('#runButton').textContent=stamina.exhausted?'息切れ':runToggle?'走る ON':'走る';$('#runButton').setAttribute('aria-pressed',String(runToggle));
+  $('#runState').textContent=stamina.exhausted?'息切れ / 25%まで回復待ち':stamina.sprinting?'SPRINTING':runToggle?'SPRINT READY':'STAMINA';
+  $('#runButton').textContent=stamina.exhausted?'息切れ':runToggle?'疾走中':'長押しで走る';$('#runButton').setAttribute('aria-pressed',String(runToggle));
 }
 function equip(weapon){if(mode!=='play'||!canEquip(weapon,skills.levels))return;exitScope();state.weapon=weapon;selected=null;updateEquipment();save();tone(380,.05);}
 function updateEquipment(){
   rifle.visible=state.weapon==='rifle';blade.visible=state.weapon==='knife';
   document.querySelectorAll('[data-weapon]').forEach(b=>{const id=b.dataset.weapon;b.disabled=!canEquip(id,skills.levels);b.setAttribute('aria-pressed',String(id===state.weapon));if(id==='rifle')b.querySelector('span').textContent=b.disabled?'狩猟免許で解放':'狩猟免許 取得済';if(id==='knife')b.querySelector('span').textContent=b.disabled?'刃物スキル LV1で解放':'刃物スキル LV'+lv('knife');});
-  const w=WEAPONS[state.weapon];$('#equipmentInfo').textContent=`${w.name} / 射程 ${w.range}m${state.weapon==='rifle'?' · 残弾 '+state.ammo:' · スタミナ −'+w.stamina}`;
+  const w=WEAPONS[state.weapon];$('#equipmentToggle').textContent='装備 / '+w.name+' ▴';$('#equipmentInfo').textContent=`${w.name} / 射程 ${w.range}m${state.weapon==='rifle'?' · 残弾 '+state.ammo:' · スタミナ −'+w.stamina}`;
   $('#attackButton').textContent=state.weapon==='rifle'?(scoped?'射撃 F':'覗く / F'):'打撃 F';$('#targetButton').textContent=state.weapon==='rifle'?(scoped?'覗くのをやめる':'スコープ T'):'照準 T';
   $('#healButton').disabled=state.med<1||state.hp>=fitness.maxHP;
 }
@@ -209,7 +211,7 @@ function attack(){
 function heal(){if(mode!=='play'||state.med<1||state.hp>=fitness.maxHP)return;state.med--;state.hp=Math.min(fitness.maxHP,state.hp+32+Math.round(sc('lifeline')*38));tone(600,.2);toast('応急処置で体力を回復。');updateHUD();save()}
 function blocked(x,z){return Math.abs(x)>62||Math.abs(z)>72||colliders.some(b=>Math.abs(x-b.x)<b.w/2+.4&&Math.abs(z-b.z)<b.d/2+.4)}
 function moveActor(g,dx,dz){let x=g.position.x+dx,z=g.position.z+dz;if(inside){const hit=(xx,zz)=>(xx< -2.4&&xx> -5.6&&Math.abs(zz)<1.1)||(xx>2.5&&xx<5.5&&zz> -1.1&&zz<3.1)||zz< -4;if(!hit(x,g.position.z))g.position.x=clamp(x,-5.7,5.7);if(!hit(g.position.x,z))g.position.z=clamp(z,-5.7,5.7)}else{if(!blocked(x,g.position.z))g.position.x=x;if(!blocked(g.position.x,z))g.position.z=z}}
-function finish(won){exitScope();mode='end';clearDestination();keys.clear();resetStick();$('#ending').hidden=false;$('#endLabel').textContent=won?'EXTRACTION COMPLETE':'SIGNAL LOST';$('#endTitle').textContent=won?'生還。':'通信途絶。';$('#endText').textContent=won?`作戦時間 ${Math.floor(state.seconds/60)}分${Math.floor(state.seconds%60)}秒 / 排除 ${state.killed.length}体 / 狩猟 ${state.harvested.length}頭。`:'移動しながら距離を取り、スタミナを残して戦おう。装備室の肉体記録がHPと持久力に反映されます。';state.won=won;save()}
+function finish(won){exitScope();mode='end';clearDestination();keys.clear();resetStick();releaseRun();$('#ending').hidden=false;$('#endLabel').textContent=won?'EXTRACTION COMPLETE':'SIGNAL LOST';$('#endTitle').textContent=won?'生還。':'通信途絶。';$('#endText').textContent=won?`作戦時間 ${Math.floor(state.seconds/60)}分${Math.floor(state.seconds%60)}秒 / 排除 ${state.killed.length}体 / 狩猟 ${state.harvested.length}頭。`:'移動しながら距離を取り、スタミナを残して戦おう。装備室の肉体記録がHPと持久力に反映されます。';state.won=won;save()}
 function interact(){
   if(mode!=='play'||!near)return;exitScope();clearDestination();selected=null;tone(450);
   if(near.type==='door'){onBike=false;inside=near;Object.entries(indoorProps).forEach(([id,g])=>g.visible=id===inside.id);world.visible=false;interiors.visible=true;player.position.set(0,0,4);scene.fog.density=.006;crate.visible=!state.loot.includes(near.id);toast(near.name+' / 奥の物資を調べる');}
@@ -225,15 +227,17 @@ $('#interact').onclick=interact;
 $('#tasks').onclick=e=>{const b=e.target.closest('[data-destination]');if(!b||mode!=='play'||inside)return;const d=interactions.find(i=>i.id===b.dataset.destination);setDestination(new THREE.Vector3(d.x,0,d.z));toast(d.name+'へ移動。障害物は道路をクリックして迂回してください。');};
 $('#forestButton').onclick=()=>{if(mode==='play'&&!inside){setDestination(new THREE.Vector3(0,0,6),[new THREE.Vector3(0,0,48)]);toast('南の森林へ移動。鹿は緑色のミニマップ表示。');}};
 $('#carcassButton').onclick=()=>{if(mode!=='play'||inside)return;const d=deer.filter(e=>e.hp<=0).sort((a,b)=>distanceTo(a)-distanceTo(b))[0];if(d)setDestination(new THREE.Vector3(d.g.position.x,0,d.g.position.z));};
-function pause(){if(mode==='play'){exitScope();mode='paused';clearDestination();keys.clear();resetStick();runToggle=false;stamina.sprinting=false;$('#pauseScreen').hidden=false;updateVitals();save();}}
-function resume(){mode='play';$('#pauseScreen').hidden=true;keys.clear();resetStick();}
+function pause(){if(mode==='play'){exitScope();mode='paused';clearDestination();keys.clear();resetStick();releaseRun();runToggle=false;stamina.sprinting=false;$('#pauseScreen').hidden=false;updateVitals();save();}}
+function resume(){mode='play';$('#pauseScreen').hidden=true;keys.clear();resetStick();releaseRun();}
 $('#pause').onclick=pause;$('#resume').onclick=resume;
 function restart(){resetting=true;state=fresh();try{localStorage.setItem(SAVE,JSON.stringify(state))}catch{}location.reload();}
 $('#restart').onclick=()=>{if(confirm('この試作ゲームの作戦進行をリセットしますか？スキルの記録は残ります。'))restart();};$('#again').onclick=restart;
 $('#startButton').textContent=stored&&state.seconds>0?'前回の作戦を続ける ↗':'作戦を開始する ↗';$('#startButton').onclick=()=>{requestLandscape();mode='play';grace=8;$('#start').hidden=true;document.body.classList.remove('briefing');toast(isTouch()?'左スティックで移動。走る・攻撃は右側。スコープ内をドラッグして照準。':'ライフルは T でスコープ。ドラッグで照準を合わせ、クリック / F で射撃。');updateHUD();};
-for(const button of document.querySelectorAll('[data-weapon]'))button.onclick=()=>equip(button.dataset.weapon);
+function closeEquipment(){ $('#equipmentDrawer').hidden=true;$('#equipmentToggle').setAttribute('aria-expanded','false');}
+$('#equipmentToggle').onclick=()=>{const open=$('#equipmentDrawer').hidden;$('#equipmentDrawer').hidden=!open;$('#equipmentToggle').setAttribute('aria-expanded',String(open));};
+for(const button of document.querySelectorAll('[data-weapon]'))button.onclick=()=>{equip(button.dataset.weapon);closeEquipment();};
 $('#attackButton').onclick=attack;$('#targetButton').onclick=cycleTarget;$('#healButton').onclick=heal;
-$('#runButton').onclick=()=>{if(mode==='play'){runToggle=!runToggle;updateVitals();}};
+releaseRun=bindHold($('#runButton'),held=>{runToggle=held&&mode==='play'&&!scoped;updateVitals();});
 function updateFitnessPanel(){
  const body=skills.body||{},entries=[['run5k','5km走','分'],['bench','ベンチプレス','kg'],['squat','スクワット','kg'],['dead','デッドリフト','kg'],['pullup','懸垂','回'],['grip','握力','kg'],['bf','体脂肪率','%']];
  $('#bodyRecords').replaceChildren(...entries.map(([id,label,unit])=>{const row=document.createElement('div');const name=document.createElement('span'),value=document.createElement('b');name.textContent=label;value.textContent=Number.isFinite(Number(body[id]))&&Number(body[id])>0?Number(body[id])+' '+unit:'未入力';row.append(name,value);return row;}));
@@ -253,7 +257,7 @@ window.addEventListener('keydown',e=>{
  else if(k===' '&&e.target.closest('button,a'))return;
  else{if(k===' ')e.preventDefault();keys.add(k);}
 });
-window.addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));window.addEventListener('blur',()=>{keys.clear();resetStick();pause();});document.addEventListener('visibilitychange',()=>{if(document.hidden)pause();});window.addEventListener('pagehide',save);
+window.addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));window.addEventListener('blur',()=>{keys.clear();resetStick();releaseRun();pause();});document.addEventListener('visibilitychange',()=>{if(document.hidden)pause();});window.addEventListener('pagehide',save);
 function resetStick(){stick.x=0;stick.y=0;stick.id=null;$('#stickKnob').style.transform='translate(-50%,-50%)';$('#joystick').classList.remove('active');}
 function moveStick(e){
  const r=$('#joystick').getBoundingClientRect(),radius=r.width*.32;
@@ -279,6 +283,9 @@ function checkOrientation(){
 $('#landscapeButton').onclick=requestLandscape;
 window.addEventListener('resize',checkOrientation);document.addEventListener('fullscreenchange',checkOrientation);checkOrientation();
 $('#touchRotate').onclick=()=>targetAngle+=Math.PI/2;
+// Pointerdown is delivered for every finger, unlike compatibility click events.
+for(const button of document.querySelectorAll('#attackButton,#targetButton,#healButton,#interact,#touchRotate,#equipmentToggle,#scopeFire,#scopeZoom,#scopeBack')){const action=button.onclick;bindPress(button,action);}
+for(const button of document.querySelectorAll('[data-weapon]')){const action=button.onclick;bindChoice(button,action);}
 function refreshProfile(){
   const hpFraction=state.hp/fitness.maxHP,staminaFraction=stamina.value/fitness.maxStamina;
   skills=read(SNAP,skills);skills.body=read('the-day-body-v1',skills.body||{});skills.levels={...skills.levels,...read('the-day-skills-v2',{})};fitness=deriveFitness(skills.body);
