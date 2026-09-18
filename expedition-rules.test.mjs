@@ -1,0 +1,7 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {STAGES,buildPlan,canPlaceBarrier} from './expedition-rules.mjs';
+test('three distinct stages expose their own locations',()=>{assert.equal(Object.keys(STAGES).length,3);assert.notDeepEqual(STAGES.forest.names,STAGES.city.names);assert.notDeepEqual(STAGES.port.names,STAGES.city.names);});
+test('untrained survivor can build a basic barrier but cannot build a crossing',()=>{assert.equal(buildPlan('barrier',{},4).allowed,true);assert.equal(buildPlan('bridge',{},100).allowed,false);assert.equal(buildPlan('bridge',{architect:1},100).allowed,false);});
+test('architecture saves resources and raises durability; carpentry unlocks crossings',()=>{const basic=buildPlan('barrier',{},4),trained=buildPlan('barrier',{architect:2,carpentry:2},3);assert.equal(trained.allowed,true);assert.ok(trained.hp>basic.hp);assert.ok(trained.cost<basic.cost);assert.equal(buildPlan('bridge',{carpentry:2},6).allowed,true);assert.equal(buildPlan('bridge',{architect:2},4).allowed,true);assert.equal(buildPlan('bridge',{architect:2},3).allowed,false);});
+test('placement rejects buildings, bounds, existing barriers, and accepts open ground',()=>{assert.equal(canPlaceBarrier(0,0,[],[]),true);assert.equal(canPlaceBarrier(0,0,[{x:2,z:0,w:4,d:4}],[]),false);assert.equal(canPlaceBarrier(0,0,[],[{x:2,z:0,hp:100}]),false);assert.equal(canPlaceBarrier(0,0,[],[{x:2,z:0,hp:0}]),true);assert.equal(canPlaceBarrier(62,0,[],[]),false);});

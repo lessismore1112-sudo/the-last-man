@@ -1,23 +1,26 @@
+import {STAGES,buildPlan,canPlaceBarrier} from './expedition-rules.mjs';
 import {bindPress,bindHold,bindChoice} from './touch-controls.mjs';
 import * as THREE from './vendor/three.module.js';
 import {traceScopeShot,dragAim} from './scope-shot.mjs';
 import {deriveFitness,WEAPONS,canEquip,attackPlan,hitDamage,lineBlocked,staminaStep} from './game-rules.mjs';
 const $=s=>document.querySelector(s), clamp=THREE.MathUtils.clamp;
-const SAVE='the-day-deadzone-save-v1', SNAP='the-day-deadzone-skills-v1';
+const stageId=Object.hasOwn(STAGES,new URLSearchParams(location.search).get('stage'))?new URLSearchParams(location.search).get('stage'):'city',stage=STAGES[stageId];
+const SAVE='the-day-deadzone-save-v1'+(stageId==='city'?'':'-'+stageId), SNAP='the-day-deadzone-skills-v1';
 function read(key,fallback){try{return JSON.parse(localStorage.getItem(key))||fallback}catch{return fallback}}
 let skills=read(SNAP,{scores:{combat:.2,mobility:.3,shelter:.2,food:0,lifeline:0,tactics:0,body:0},levels:{'hunt-license':2}});
 const sc=k=>clamp(Number(skills.scores?.[k])||0,0,1),lv=k=>clamp(Number(skills.levels?.[k])||0,0,5);
 skills.body=read('the-day-body-v1',skills.body||{});
 skills.levels={...skills.levels,...read('the-day-skills-v2',{})};
 let fitness=deriveFitness(skills.body);
-const fresh=()=>({x:0,z:14,hp:fitness.maxHP,maxHP:fitness.maxHP,stamina:fitness.maxStamina,maxStamina:fitness.maxStamina,ammo:18,med:1,loot:[],killed:[],harvested:[],wildlife:{},enemies:{},food:0,weapon:'fists',seconds:0,won:false});
+const fresh=()=>({x:0,z:14,hp:fitness.maxHP,maxHP:fitness.maxHP,stamina:fitness.maxStamina,maxStamina:fitness.maxStamina,ammo:18,med:1,loot:[],killed:[],harvested:[],wildlife:{},enemies:{},food:0,weapon:'fists',materials:6,structures:[],bridgeBuilt:false,seconds:0,won:false});
 let state=fresh(),mode='intro',inside=null,near=null,onBike=false,angle=0,targetAngle=0,time=0,toastTime=0,saveTime=0,grace=0;
 let stored=read(SAVE,null);if(stored&&Number.isFinite(stored.x)&&Array.isArray(stored.loot)&&stored.hp>0&&!stored.won)state={...fresh(),...stored};
 state.hp=clamp(state.hp/(state.maxHP||100)*fitness.maxHP,0,fitness.maxHP);state.maxHP=fitness.maxHP;
 state.stamina=clamp(state.stamina/(state.maxStamina||100)*fitness.maxStamina,0,fitness.maxStamina);state.maxStamina=fitness.maxStamina;
 state.harvested=Array.isArray(state.harvested)?state.harvested:[];state.enemies=state.enemies||{};state.wildlife=state.wildlife||{};state.killed=Array.isArray(state.killed)?state.killed:[];
+state.materials=Math.max(0,Number(state.materials)||0);state.structures=Array.isArray(state.structures)?state.structures:[];
 if(!canEquip(state.weapon,skills.levels))state.weapon='fists';
-const scene=new THREE.Scene();scene.background=new THREE.Color('#536b69');scene.fog=new THREE.FogExp2('#536b69',.012);
+const scene=new THREE.Scene();scene.background=new THREE.Color(stage.sky);scene.fog=new THREE.FogExp2(stage.sky,.012);
 let renderer;try{renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});}catch(e){$('#loading').textContent='3D表示にはWebGL対応ブラウザが必要です。';$('#startButton').disabled=true;throw e;}
 renderer.setPixelRatio(Math.min(devicePixelRatio,1.7));renderer.setSize(innerWidth,innerHeight);renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.28;$('#world').append(renderer.domElement);
 const camera=new THREE.PerspectiveCamera(43,innerWidth/innerHeight,.1,240);camera.position.set(20,23,35);
@@ -31,7 +34,7 @@ function box(parent,x,y,z,w,h,d,c,shadow=true){const m=new THREE.Mesh(boxGeo,mat
 function cyl(parent,x,y,z,r,h,c,n=8){const m=new THREE.Mesh(new THREE.CylinderGeometry(r,r,h,n),mat(c));m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;parent.add(m);return m}
 function label(parent,text,x,y,z,w=5,color='#d7c795',background='#263c38'){const cv=document.createElement('canvas');cv.width=512;cv.height=128;const c=cv.getContext('2d');c.fillStyle=background;c.fillRect(0,0,512,128);c.fillStyle=color;c.textAlign='center';c.font='bold 52px sans-serif';c.fillText(text,256,85);const tex=new THREE.CanvasTexture(cv);tex.colorSpace=THREE.SRGBColorSpace;const m=new THREE.Mesh(new THREE.PlaneGeometry(w,w/4),new THREE.MeshBasicMaterial({map:tex,side:THREE.DoubleSide}));m.position.set(x,y,z);parent.add(m);return m}
 let seed=72819;function rnd(){seed=(seed*1664525+1013904223)>>>0;return seed/4294967296}
-box(world,0,-.35,0,140,.6,160,'#4a5d49');box(world,0,0,0,13,.08,145,'#333e3b');box(world,0,.01,6,130,.09,12,'#333e3b');box(world,0,.01,-29,90,.09,10,'#333e3b');
+box(world,0,-.35,0,140,.6,160,stage.ground);box(world,0,0,0,13,.08,145,'#333e3b');box(world,0,.01,6,130,.09,12,'#333e3b');box(world,0,.01,-29,90,.09,10,'#333e3b');
 for(let z=-68;z<70;z+=7)box(world,0,.065,z,.15,.015,2.9,'#b6ae7d',false);
 for(let x=-60;x<60;x+=7){if(Math.abs(x)>7)box(world,x,.07,6,3,.02,.15,'#b6ae7d',false)}
 [-1,1].forEach(s=>{box(world,s*7,.12,0,1,.25,138,'#7a8171');box(world,s*35,.12,13,56,.25,1,'#7a8171');box(world,s*35,.12,-1,56,.25,1,'#7a8171')});
@@ -42,11 +45,20 @@ function building(x,z,w,d,h,color,name,id){const g=new THREE.Group();g.position.
 for(let y=2.8;y<h-1;y+=2.6){for(let xx=-w/2+1.5;xx<w/2;xx+=2.4){box(g,xx,y,d/2+.035,1.25,1.6,.09,rnd()>.7?'#a29467':'#293e3e',false);box(g,xx,y,d/2+.1,1.45,.1,.3,'#8a8e78',false)}for(let zz=-d/2+1.5;zz<d/2;zz+=2.6)box(g,w/2+.04,y,zz,.08,1.6,1.3,'#2c4342',false)}
 box(g,0,1.3,d/2+.08,1.8,2.5,.15,'#202f2c');box(g,-1,1.35,d/2+.16,.12,2.7,.25,'#98a08a');box(g,1,1.35,d/2+.16,.12,2.7,.25,'#98a08a');if(name){label(g,name,0,4.5,d/2+.14,Math.min(w-1,7));box(g,0,3.5,d/2+.7,w-.5,.15,1.5,'#7c7654');}
 colliders.push({x,z,w:w+.2,d:d+.2,h:h+1.2});buildings.push({g,x,z,w,d,h});if(id)interactions.push({id,type:'door',x,z:z+d/2+1.25,name,building:g});return g;}
+if(stageId==='city'){
 building(-16,-13,13,16,10,'#697266','CLINIC','clinic');building(16,-13,13,16,7,'#867d67','MOTOR WORKS','garage');building(-18,25,17,15,15,'#73776a','WEST BLOCK');building(18,24,16,14,11,'#847762','NO SIGNAL');building(-17,-44,14,15,9,'#65746e','RADIO / 04','radio');building(20,-44,18,15,18,'#777e71','NORTH TOWER');building(-39,-12,14,15,12,'#69736a');building(39,-12,14,15,14,'#827b6a');building(-41,25,14,14,8,'#77735f');building(42,25,13,15,9,'#58685d');
+}else if(stageId==='forest'){
+ building(-16,-13,10,10,4,'#817b59',stage.names[0],'clinic');building(20,22,20,12,5,'#776244',stage.names[1],'garage');building(-17,-44,9,10,7,'#697461',stage.names[2],'radio');
+ for(const [x,z] of [[-36,12],[36,-14],[-37,-40]])building(x,z,9,9,4,'#71664d','CABIN');
+}else{
+ building(-19,-13,19,12,5,'#65767d',stage.names[0],'clinic');building(23,24,24,14,6,'#82745e',stage.names[1],'garage');building(-20,-47,15,13,8,'#72828a',stage.names[2],'radio');
+ for(let i=0;i<6;i++){const x=30+(i%2)*9,z=-38+Math.floor(i/2)*15;box(world,x,1.6,z,7,3.2,10,i%2?'#8a6248':'#4f6a68');colliders.push({x,z,w:7,d:10,h:3.2});}
+ box(world,57,-.15,0,23,.1,145,'#345c6d');colliders.push({x:60,z:0,w:25,d:145,h:.1});for(const z of [-30,25]){cyl(world,48,9,z,.4,18,'#a49057');box(world,40,17,z,20,.5,.7,'#b2a16a');}
+}
 // Radio mast silhouette.
 for(let i=0;i<4;i++){cyl(world,-18+i*.6,13,-45,.09,13,'#9ca899',5)}box(world,-17,18,-45,4,.1,.1,'#a7b2a2');box(world,-17,16,-45,.1,.1,4,'#a7b2a2');
 function tree(x,z,s=1){colliders.push({x,z,w:.36*s,d:.36*s,h:3.2*s});const g=new THREE.Group();g.position.set(x,0,z);world.add(g);cyl(g,0,1.6*s,0,.18*s,3.2*s,'#6c6650');for(let i=0;i<3;i++){const m=new THREE.Mesh(new THREE.ConeGeometry((2-i*.4)*s,3*s,7),mat(i===1?'#506650':'#3b574b'));m.position.y=(3+i*1.2)*s;m.castShadow=true;g.add(m)}}
-for(let i=0;i<100;i++){let x=(rnd()-.5)*135,z=(rnd()-.5)*148;if(Math.abs(x)>52||z>43||z< -58){if(Math.abs(x)>9)tree(x,z,.65+rnd()*.7)}}
+for(let i=0;i<(stageId==='port'?20:stageId==='forest'?145:100);i++){let x=(rnd()-.5)*135,z=(rnd()-.5)*148;if(Math.abs(x)>(stageId==='forest'?28:52)||z>43||z< -58){if(Math.abs(x)>9)tree(x,z,.65+rnd()*.7)}}
 for(let i=0;i<70;i++){let x=(rnd()-.5)*110,z=(rnd()-.5)*135;if(Math.abs(x)>8&&Math.abs(z-6)>8){const m=box(world,x,.15,z,.2+rnd()*.7,.25+rnd()*.45,.4+rnd()*.7,'#8b8a72');m.rotation.y=rnd()*6}}
 function car(x,z,rot=0,color='#6e7868'){const g=new THREE.Group();g.position.set(x,0,z);g.rotation.y=rot;world.add(g);box(g,0,.7,0,1.9,.6,3.8,color);box(g,0,1.22,-.2,1.65,.7,1.8,'#35494a');box(g,0,1.65,-.2,1.8,.1,2,color);[-.97,.97].forEach(xx=>[-1.15,1.15].forEach(zz=>{const m=cyl(g,xx,.42,zz,.4,.18,'#222c2b',10);m.rotation.z=Math.PI/2}));[-.6,.6].forEach(xx=>box(g,xx,.77,1.91,.4,.22,.03,'#d4bf87'));colliders.push({x,z,w:rot?4:2,d:rot?2:4,h:1.8})}
 car(4,25,.12);car(-4,-19,-.1,'#9b8a68');car(26,8,Math.PI/2,'#78766a');car(-29,3,-Math.PI/2);car(4,-46,0,'#717e82');
@@ -59,6 +71,7 @@ const player=person();scene.add(player);const rifle=new THREE.Group();player.add
 const blade=new THREE.Group();player.add(blade);box(blade,.5,1.03,.18,.08,.2,.1,'#393e32');box(blade,.5,1.03,.47,.055,.16,.46,'#b6c0ac');blade.visible=state.weapon==='knife';
 function animatePerson(g,t,speed){g.userData.limbs.forEach((l,i)=>{l.rotation.x=Math.sin(t*9+(i===0||i===3?0:Math.PI))*.55*speed});g.position.y=Math.abs(Math.sin(t*9))*.045*speed}
 const spots=[[0,-8],[3,-36],[-8,6],[15,8],[-23,10],[1,39],[-9,-29],[33,7],[-31,-28],[4,-56]];
+if(stageId!=='city')spots.push([24,-28],[-25,35],[0,-48]);
 spots.forEach(([x,z],i)=>{if(state.killed.includes(i))return;let g=person(true);g.position.set(x,0,z);g.rotation.z=.06;world.add(g);const entity={g,x,z,id:i,type:'zombie',hp:clamp(state.enemies[i]?.hp||52,1,52),phase:rnd()*6,hitAt:0,stun:0};g.userData.entity=entity;zombies.push(entity)});
 function makeBike(){const g=new THREE.Group();world.add(g);for(const z of [-.8,.8]){const m=cyl(g,0,.5,z,.47,.19,'#26332e',12);m.rotation.z=Math.PI/2;const hub=cyl(g,0,.5,z,.24,.21,'#8a9686');hub.rotation.z=Math.PI/2}box(g,0,.85,0,.36,.3,1.4,'#b09562');box(g,0,1.12,-.2,.45,.16,.7,'#2b362b');box(g,0,1.45,.65,.85,.08,.08,'#9aab9d');box(g,0,1.22,.8,.3,.28,.2,'#d0c69d');g.position.set(9,0,9);return g}
 const bike=makeBike();interactions.push({id:'bike',type:'bike',x:9,z:9,name:'放置バイク / 乗る'});
@@ -70,6 +83,18 @@ box(interiors,-4,.6,0,2.4,1.2,1.3,'#6d7762');box(interiors,-4,1.23,0,2.7,.12,1.5
 const markerGeo=new THREE.OctahedronGeometry(.25);const markers=[];interactions.filter(a=>a.type==='door').forEach(a=>{const m=new THREE.Mesh(markerGeo,new THREE.MeshBasicMaterial({color:'#ecc887'}));m.position.set(a.x,2,a.z);world.add(m);markers.push({m,id:a.id})});
 // Light airborne ash makes distance readable without photographic assets.
 const positions=new Float32Array(360);for(let i=0;i<120;i++){positions[i*3]=(rnd()-.5)*100;positions[i*3+1]=1+rnd()*12;positions[i*3+2]=(rnd()-.5)*120}const ashGeo=new THREE.BufferGeometry();ashGeo.setAttribute('position',new THREE.BufferAttribute(positions,3));const ash=new THREE.Points(ashGeo,new THREE.PointsMaterial({color:'#c7c4a0',size:.06,transparent:true,opacity:.55}));world.add(ash);
+// Construction has real collision, durability and persistent stage-local progress.
+const structures=[];
+function renderBarrier(record){const g=new THREE.Group();g.position.set(record.x,0,record.z);world.add(g);for(const x of [-1.6,1.6])box(g,x,.8,0,.18,1.6,.3,'#716343');for(const y of [.45,1,1.5])box(g,0,y,0,3.8,.2,.35,'#b19a6e');const collider={x:record.x,z:record.z,w:3.8,d:.5,h:1.7};colliders.push(collider);structures.push({record,g,collider});}
+for(const record of state.structures)if(record.hp>0)renderBarrier(record);
+const bridge=new THREE.Group();world.add(bridge);
+if(stageId!=='city'){
+ box(world,0,.8,-29,15,1.6,3,'#5f685c');colliders.push({x:0,z:-29,w:15,d:3,h:1.6});
+ interactions.push({id:'crossing',type:'crossing',x:0,z:-24,name:'封鎖前 / 足場を建築'});
+ interactions.push({id:'crossing-back',type:'crossing',x:0,z:-34,name:'足場で戻る'});
+ for(let z=-33;z<=-25;z+=1)box(bridge,0,1.85,z,3,.2,.85,'#b49d73');for(const x of [-1.7,1.7]){box(bridge,x,2.35,-29,.1,.1,9,'#b49d73');box(bridge,x,1,-29,.15,2,.15,'#7d7256');}
+ bridge.visible=!!state.bridgeBuilt;
+}
 // Real-time field controls: terrain clicks move, actor clicks target and attack.
 let destination=null,waypoints=[],selected=null,runToggle=false,readyAt=0,damageReady=0,simTime=0,lastNoise=-100,noticeAt=0;
 let stamina={value:state.stamina,exhausted:!!state.exhausted,delay:0,sprinting:false};
@@ -81,6 +106,7 @@ const groundPlane=new THREE.Plane(new THREE.Vector3(0,1,0),0);
 const targetRing=new THREE.Mesh(new THREE.RingGeometry(.35,.46,24),new THREE.MeshBasicMaterial({color:'#efd092',side:THREE.DoubleSide}));targetRing.rotation.x=-Math.PI/2;targetRing.visible=false;scene.add(targetRing);
 const aimRing=new THREE.Mesh(new THREE.RingGeometry(.7,.78,32),new THREE.MeshBasicMaterial({color:'#e3ac6a',side:THREE.DoubleSide,depthTest:false}));aimRing.rotation.x=-Math.PI/2;aimRing.renderOrder=3;aimRing.visible=false;scene.add(aimRing);
 const tracers=[];
+let canvasPointer=null;
 let scoped=false,scopeYaw=0,scopePitch=0,scopeZoom=2,recoil=0,scopeDrag=null,scopeHitUntil=0;
 const tracerMaterial=new THREE.LineBasicMaterial({color:'#ffe7a4',transparent:true,opacity:.9});
 function activeTargets(){return inside?[]:[...zombies,...deer].filter(e=>e.hp>0&&e.g.visible)}
@@ -114,7 +140,9 @@ function setScopeZoom(){camera.fov=scopeZoom===2?22:11;camera.updateProjectionMa
 $('#scopeBack').onclick=exitScope;$('#scopeFire').onclick=()=>attack();
 $('#scopeZoom').onclick=()=>{if(scoped){scopeZoom=scopeZoom===2?4:2;setScopeZoom();}};
 renderer.domElement.addEventListener('pointerdown',e=>{
-  if(!scoped||mode!=='play'||e.button!==0||scopeDrag)return;
+  if(mode!=='play'||e.button!==0)return;
+  if(!scoped){canvasPointer=e.pointerId;return;}
+  if(scopeDrag)return;
   scopeDrag={id:e.pointerId,x:e.clientX,y:e.clientY,moved:0};renderer.domElement.setPointerCapture(e.pointerId);
 });
 renderer.domElement.addEventListener('pointermove',e=>{
@@ -124,10 +152,11 @@ renderer.domElement.addEventListener('pointermove',e=>{
   const aim=dragAim(scopeYaw,scopePitch,dx,dy,scopeZoom);scopeYaw=aim.yaw;scopePitch=aim.pitch;
   player.rotation.y=scopeYaw;positionScopeCamera();
 });
-renderer.domElement.addEventListener('pointercancel',()=>{scopeDrag=null;});
+renderer.domElement.addEventListener('pointercancel',()=>{scopeDrag=null;canvasPointer=null;});
 renderer.domElement.addEventListener('pointerup',e=>{
   if(mode!=='play'||e.button!==0)return;
   if(scoped){if(scopeDrag?.id!==e.pointerId)return;const clicked=scopeDrag.moved<5&&e.pointerType==='mouse';scopeDrag=null;if(clicked)attack();return;}
+  if(canvasPointer!==e.pointerId)return;canvasPointer=null;
   if(e.pointerType==='touch')return;
   pointer.set(e.clientX/innerWidth*2-1,1-e.clientY/innerHeight*2);raycaster.setFromCamera(pointer,camera);
   const hitActor=raycaster.intersectObjects(activeTargets().map(e=>e.g),true)[0];
@@ -154,8 +183,8 @@ function save(){
   try{localStorage.setItem(SAVE,JSON.stringify(s))}catch{notice('保存できませんでした。ブラウザの保存設定を確認してください。')}
 }
 function updateHUD(){
-  $('#ammo').textContent=state.ammo+' ROUNDS';$('#med').textContent=state.med+' MEDKIT';$('#ride').textContent=onBike?'RIDING':state.food+' FOOD';
-  $('#tasks').innerHTML=[['clinic','医療物資 / CLINIC'],['garage','燃料 / MOTOR WORKS'],['radio','無線部品 / RADIO']].map(([id,t])=>`<button data-destination="${id}" class="${state.loot.includes(id)?'done':''}">${state.loot.includes(id)?'✓':'□'} ${t} ↗</button>`).join('');
+  $('#buildButton').textContent='建築 / 資材 '+state.materials;$('#ammo').textContent=state.ammo+' ROUNDS';$('#med').textContent=state.med+' MEDKIT';$('#ride').textContent=onBike?'RIDING':state.food+' FOOD';
+  $('#tasks').innerHTML=[['clinic','医療物資 / '+stage.names[0]],['garage','燃料 / '+stage.names[1]],['radio','無線部品 / '+stage.names[2]]].map(([id,t])=>`<button data-destination="${id}" class="${state.loot.includes(id)?'done':''}">${state.loot.includes(id)?'✓':'□'} ${t} ↗</button>`).join('');
   $('#objective').textContent=state.loot.length===3?'北の避難ゲートへ向かい、脱出せよ。':'病院・ガレージ・通信所から物資を回収';
   $('#skillinfo').textContent=`肉体記録 ${fitness.entered}/6項目反映 · ${fitness.entered?'実測値で補正中':'未入力は基本値'}`;
   $('#carcassButton').hidden=!deer.some(d=>d.hp<=0);markers.forEach(a=>{a.m.visible=!state.loot.includes(a.id)});updateEquipment();updateVitals();
@@ -216,23 +245,47 @@ function interact(){
   if(mode!=='play'||!near)return;exitScope();clearDestination();selected=null;tone(450);
   if(near.type==='door'){onBike=false;inside=near;Object.entries(indoorProps).forEach(([id,g])=>g.visible=id===inside.id);world.visible=false;interiors.visible=true;player.position.set(0,0,4);scene.fog.density=.006;crate.visible=!state.loot.includes(near.id);toast(near.name+' / 奥の物資を調べる');}
   else if(near.type==='exit'){world.visible=true;interiors.visible=false;player.position.set(inside.x,0,inside.z+1);inside=null;scene.fog.density=.012;grace=3;}
-  else if(near.type==='loot'&&!state.loot.includes(inside.id)){state.loot.push(inside.id);if(inside.id==='clinic')state.med+=2;if(inside.id==='garage')state.ammo+=12;crate.visible=false;toast(inside.name+'の物資を回収。'+(state.loot.length===3?'北ゲートへ向かえ。':'残り '+(3-state.loot.length)+'か所。'));}
+  else if(near.type==='loot'&&!state.loot.includes(inside.id)){state.loot.push(inside.id);state.materials+=4;if(inside.id==='clinic')state.med+=2;if(inside.id==='garage')state.ammo+=12;crate.visible=false;toast(inside.name+'の物資を回収。'+(state.loot.length===3?'北ゲートへ向かえ。':'残り '+(3-state.loot.length)+'か所。'));}
   else if(near.type==='harvest'){const d=near.entity;if(!state.harvested.includes(d.id)){state.harvested.push(d.id);state.food+=2+Math.floor(sc('food')*3);d.g.visible=false;deer.splice(deer.indexOf(d),1);toast('鹿から食料を回収。糧食スキルで獲得量が増えます。');}}
   else if(near.type==='bike'){onBike=!onBike;toast(onBike?'バイクに乗った。攻撃するには E で降りる。':'バイクから降りた。');}
+  else if(near.type==='crossing'){if(state.bridgeBuilt){player.position.set(0,0,near.id==='crossing'?-35:-23);grace=2;toast('建築した足場で封鎖を越えた。');}else{openBuild();return;}}
   else if(near.type==='evac'){if(state.loot.length===3)finish(true);else toast('脱出には医療物資・燃料・無線部品が必要。');}
   near=null;$('#interact').hidden=true;updateHUD();save();
 }
-function findNear(){const candidates=inside?[{type:'exit',x:0,z:5,name:'建物を出る'},...(!state.loot.includes(inside.id)?[{type:'loot',x:0,z:-3,name:'物資を回収'}]:[])]:[...interactions,...deer.filter(d=>d.hp<=0).map(d=>({type:'harvest',x:d.g.position.x,z:d.g.position.z,name:'鹿から食料を回収',entity:d}))];near=onBike?{type:'bike',name:'バイクを降りる'}:candidates.filter(a=>Math.hypot(player.position.x-a.x,player.position.z-a.z)<2.7).sort((a,b)=>Math.hypot(player.position.x-a.x,player.position.z-a.z)-Math.hypot(player.position.x-b.x,player.position.z-b.z))[0];$('#interact').hidden=!near||mode!=='play';if(near)$('#interact').textContent='E / '+near.name;}
+function findNear(){const candidates=inside?[{type:'exit',x:0,z:5,name:'建物を出る'},...(!state.loot.includes(inside.id)?[{type:'loot',x:0,z:-3,name:'物資を回収'}]:[])]:[...interactions,...deer.filter(d=>d.hp<=0).map(d=>({type:'harvest',x:d.g.position.x,z:d.g.position.z,name:'鹿から食料を回収',entity:d}))];near=onBike?{type:'bike',name:'バイクを降りる'}:candidates.filter(a=>Math.hypot(player.position.x-a.x,player.position.z-a.z)<2.7).sort((a,b)=>Math.hypot(player.position.x-a.x,player.position.z-a.z)-Math.hypot(player.position.x-b.x,player.position.z-b.z))[0];$('#interact').hidden=!near||mode!=='play';if(near)$('#interact').textContent=(isTouch()?'':'E / ')+(near.type==='crossing'&&state.bridgeBuilt?'足場を渡る':near.name);}
 $('#interact').onclick=interact;
 $('#tasks').onclick=e=>{const b=e.target.closest('[data-destination]');if(!b||mode!=='play'||inside)return;const d=interactions.find(i=>i.id===b.dataset.destination);setDestination(new THREE.Vector3(d.x,0,d.z));toast(d.name+'へ移動。障害物は道路をクリックして迂回してください。');};
 $('#forestButton').onclick=()=>{if(mode==='play'&&!inside){setDestination(new THREE.Vector3(0,0,6),[new THREE.Vector3(0,0,48)]);toast('南の森林へ移動。鹿は緑色のミニマップ表示。');}};
 $('#carcassButton').onclick=()=>{if(mode!=='play'||inside)return;const d=deer.filter(e=>e.hp<=0).sort((a,b)=>distanceTo(a)-distanceTo(b))[0];if(d)setDestination(new THREE.Vector3(d.g.position.x,0,d.g.position.z));};
 function pause(){if(mode==='play'){exitScope();mode='paused';clearDestination();keys.clear();resetStick();releaseRun();runToggle=false;stamina.sprinting=false;$('#pauseScreen').hidden=false;updateVitals();save();}}
-function resume(){mode='play';$('#pauseScreen').hidden=true;keys.clear();resetStick();releaseRun();}
+function resume(){$('#buildPanel').hidden=true;mode='play';$('#pauseScreen').hidden=true;keys.clear();resetStick();releaseRun();}
 $('#pause').onclick=pause;$('#resume').onclick=resume;
 function restart(){resetting=true;state=fresh();try{localStorage.setItem(SAVE,JSON.stringify(state))}catch{}location.reload();}
 $('#restart').onclick=()=>{if(confirm('この試作ゲームの作戦進行をリセットしますか？スキルの記録は残ります。'))restart();};$('#again').onclick=restart;
 $('#startButton').textContent=stored&&state.seconds>0?'前回の作戦を続ける ↗':'作戦を開始する ↗';$('#startButton').onclick=()=>{requestLandscape();mode='play';grace=8;$('#start').hidden=true;document.body.classList.remove('briefing');toast(isTouch()?'左スティックで移動。走る・攻撃は右側。スコープ内をドラッグして照準。':'ライフルは T でスコープ。ドラッグで照準を合わせ、クリック / F で射撃。');updateHUD();};
+function openBuild(){if(mode!=='play')return;pause();$('#pauseScreen').hidden=true;$('#buildPanel').hidden=false;renderBuildMenu();}
+function renderBuildMenu(){
+ $('#crossingRoute').hidden=stageId==='city';$('#crossingRoute').disabled=!!inside||onBike;
+ $('#buildStock').textContent=`${stage.name} / 資材 ${state.materials} / 建築士 ${lv('architect')>=2?'取得済':'未取得'} / 大工 LV${lv('carpentry')}`;
+ for(const type of ['barrier','bridge']){const plan=buildPlan(type,skills.levels,state.materials),button=$('[data-build="'+type+'"]');const place=type==='barrier'?!inside&&!onBike:stageId!=='city'&&!inside&&!onBike&&!state.bridgeBuilt&&Math.abs(player.position.x)<3&&Math.abs(player.position.z+24)<3;button.disabled=!plan.allowed||!place;button.querySelector('small').textContent=`資材 ${plan.cost} / ${type==='barrier'?'耐久 '+plan.hp:'北側の封鎖を越える'} / ${!place?(type==='bridge'?'封鎖の南側で建築（建築済の場合は利用可）':'屋外でバイクから降りてください'):plan.reason}`;}
+}
+$('#buildButton').onclick=openBuild;bindPress($('#buildButton'),openBuild);
+$('#crossingRoute').onclick=()=>{if(stageId==='city'||inside||onBike)return;$('#buildPanel').hidden=true;resume();setDestination(new THREE.Vector3(0,0,player.position.z),[new THREE.Vector3(0,0,-24)]);toast('封鎖の南側へ。障害物がある場合はスティックで迂回してください。');};
+$('#closeBuild').onclick=()=>{$('#buildPanel').hidden=true;resume();};
+for(const button of document.querySelectorAll('[data-build]'))button.onclick=()=>{
+ if(mode!=='paused'||$('#buildPanel').hidden)return;
+ const type=button.dataset.build,plan=buildPlan(type,skills.levels,state.materials);if(!plan.allowed){renderBuildMenu();return;}
+ if(inside||onBike)return;
+ if(type==='barrier'){
+ const x=player.position.x+Math.sin(player.rotation.y)*3.5,z=player.position.z+Math.cos(player.rotation.y)*3.5;
+ if(!canPlaceBarrier(x,z,colliders,state.structures)||interactions.some(i=>Math.hypot(i.x-x,i.z-z)<4)||zombies.some(e=>Math.hypot(e.g.position.x-x,e.g.position.z-z)<3)){ $('#buildStock').textContent='ここには置けません。建物・入口・敵から離れてください。';return;}
+ if(state.structures.filter(b=>b.hp>0).length>=10){$('#buildStock').textContent='設置上限は10基です。';return;}
+ const record={x,z,hp:plan.hp};state.structures.push(record);renderBarrier(record);
+ }else{if(stageId==='city'||state.bridgeBuilt||Math.abs(player.position.x)>3||Math.abs(player.position.z+24)>3)return;state.bridgeBuilt=true;bridge.visible=true;}
+ state.materials-=plan.cost;$('#buildPanel').hidden=true;resume();updateHUD();save();toast(type==='barrier'?'バリケードを設置。感染者を足止めします。':'足場を建築。封鎖前の操作ボタンで渡れます。');
+};
+for(const [id,info] of Object.entries(STAGES)){const a=document.createElement('a');a.href='game.html?stage='+id;a.textContent=info.name;a.className=id===stageId?'selected':'';a.setAttribute('aria-label',info.name+'：'+info.subtitle);$('#stageSelect').append(a);}
+$('#stageDescription').textContent=stage.name+' — '+stage.subtitle+' / 各ステージで進行を保存';
 function closeEquipment(){ $('#equipmentDrawer').hidden=true;$('#equipmentToggle').setAttribute('aria-expanded','false');}
 $('#equipmentToggle').onclick=()=>{const open=$('#equipmentDrawer').hidden;$('#equipmentDrawer').hidden=!open;$('#equipmentToggle').setAttribute('aria-expanded',String(open));};
 for(const button of document.querySelectorAll('[data-weapon]'))button.onclick=()=>{equip(button.dataset.weapon);closeEquipment();};
@@ -249,7 +302,7 @@ window.addEventListener('keydown',e=>{
  const k=e.key.toLowerCase();if(e.target.matches('input,textarea,select'))return;
  if(e.repeat&&['f',' ','1','2','3','t','z'].includes(k))return;
  if(['arrowup','arrowdown','arrowleft','arrowright'].includes(k))e.preventDefault();
- if(k==='escape'){if(scoped){exitScope();return;}if(!$('#fitnessPanel').hidden){$('#fitnessPanel').hidden=true;resume();}else mode==='paused'?resume():pause();return;}
+ if(k==='escape'){if(!$('#buildPanel').hidden){$('#buildPanel').hidden=true;resume();return;}if(scoped){exitScope();return;}if(!$('#fitnessPanel').hidden){$('#fitnessPanel').hidden=true;resume();}else mode==='paused'?resume():pause();return;}
  if(mode!=='play')return;
  if(scoped&&k==='z'&&!e.repeat){scopeZoom=scopeZoom===2?4:2;setScopeZoom();return;}
  if(['1','2','3'].includes(k)){equip(Object.keys(WEAPONS)[Number(k)-1]);return;}
@@ -331,6 +384,8 @@ function frame(now){
   if(!inside){
    for(const z of zombies){
     let dx=player.position.x-z.g.position.x,dz=player.position.z-z.g.position.z,dist=Math.hypot(dx,dz);
+    const barrier=structures.find(b=>b.record.hp>0&&Math.abs(z.g.position.x-b.record.x)<3&&Math.abs(z.g.position.z-b.record.z)<1.8);
+    if(barrier&&dist<15&&grace<=0){if(simTime>z.hitAt){z.hitAt=simTime+1;barrier.record.hp=Math.max(0,barrier.record.hp-14);if(!barrier.record.hp){barrier.g.visible=false;colliders.splice(colliders.indexOf(barrier.collider),1);toast('バリケードが破壊された。');save();}}continue;}
     const audible=simTime-lastNoise<6&&dist<32;
     if((dist<13||audible)&&dist>1.2&&grace<=0&&simTime>(z.stun||0)){
       moveActor(z.g,dx/dist*dt*1.45,dz/dist*dt*1.45);z.g.rotation.y=Math.atan2(dx,dz);animatePerson(z.g,time+z.phase,.6);
@@ -342,7 +397,7 @@ function frame(now){
    for(const d of deer){if(d.hp<=0)continue;const dist=distanceTo(d);if(dist<9||(simTime-lastNoise<4&&dist<32)){const dx=d.g.position.x-player.position.x,dz=d.g.position.z-player.position.z;d.g.position.x=clamp(d.g.position.x+dx/Math.max(dist,1)*dt*4,-55,55);d.g.position.z=clamp(d.g.position.z+dz/Math.max(dist,1)*dt*4,44,69);d.g.rotation.y=Math.atan2(dx,dz);d.g.position.y=Math.abs(Math.sin(time*11))*.2;}else d.g.position.y=0;}
   }
   findNear();saveTime+=dt;if(saveTime>4){save();saveTime=0;}
-  $('#district').textContent=inside?inside.name:player.position.z>40?'FOREST EDGE':player.position.z< -34?'NORTH DISTRICT':'OLD TOWN';
+  $('#district').textContent=inside?inside.name:stageId!=='city'?stage.name:player.position.z>40?'FOREST EDGE':player.position.z< -34?'NORTH DISTRICT':'OLD TOWN';
   $('#coords').textContent=`${inside?'INTERIOR':`X ${Math.round(player.position.x)} / Z ${Math.round(player.position.z)}`} · 17:${String(42+Math.floor(state.seconds/60)%18).padStart(2,'0')}`;
  }
  angle=THREE.MathUtils.damp(angle,targetAngle,7,dt);const p=player.position,distance=inside?15:innerWidth<760?23:25;
