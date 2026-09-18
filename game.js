@@ -72,6 +72,8 @@ const positions=new Float32Array(360);for(let i=0;i<120;i++){positions[i*3]=(rnd
 // Real-time field controls: terrain clicks move, actor clicks target and attack.
 let destination=null,waypoints=[],selected=null,runToggle=false,readyAt=0,damageReady=0,simTime=0,lastNoise=-100,noticeAt=0;
 let stamina={value:state.stamina,exhausted:!!state.exhausted,delay:0,sprinting:false};
+const stick={x:0,y:0,id:null};
+const isTouch=()=>matchMedia('(pointer:coarse)').matches||navigator.maxTouchPoints>0;
 const keys=new Set(),raycaster=new THREE.Raycaster(),pointer=new THREE.Vector2();
 const groundPlane=new THREE.Plane(new THREE.Vector3(0,1,0),0);
 const targetRing=new THREE.Mesh(new THREE.RingGeometry(.35,.46,24),new THREE.MeshBasicMaterial({color:'#efd092',side:THREE.DoubleSide}));targetRing.rotation.x=-Math.PI/2;targetRing.visible=false;scene.add(targetRing);
@@ -93,7 +95,7 @@ function positionScopeCamera(){
   camera.updateMatrixWorld(true);
 }
 function exitScope(){
-  if(!scoped)return;scoped=false;scopeDrag=null;recoil=0;keys.clear();player.visible=true;
+  if(!scoped)return;scoped=false;scopeDrag=null;recoil=0;keys.clear();resetStick();player.visible=true;
   document.body.classList.remove('scoped');$('#scopeOverlay').hidden=true;camera.fov=43;camera.updateProjectionMatrix();
   updateEquipment();
 }
@@ -101,7 +103,7 @@ function toggleScope(){
   if(scoped){exitScope();return;}
   if(mode!=='play'||state.weapon!=='rifle'||!canEquip('rifle',skills.levels))return;
   if(onBike||inside){notice(onBike?'バイクから降りてスコープを覗いてください。':'屋外でスコープを使用してください。');return;}
-  scoped=true;clearDestination();selected=null;aimRing.visible=false;keys.clear();runToggle=false;stamina.sprinting=false;
+  scoped=true;clearDestination();selected=null;aimRing.visible=false;keys.clear();resetStick();runToggle=false;stamina.sprinting=false;
   scopeYaw=player.rotation.y;scopePitch=0;recoil=0;player.visible=false;
   document.body.classList.add('scoped');$('#scopeOverlay').hidden=false;setScopeZoom();positionScopeCamera();updateEquipment();
   $('#scopeFeedback').textContent='ドラッグで照準を合わせてください';
@@ -110,7 +112,7 @@ function setScopeZoom(){camera.fov=scopeZoom===2?22:11;camera.updateProjectionMa
 $('#scopeBack').onclick=exitScope;$('#scopeFire').onclick=()=>attack();
 $('#scopeZoom').onclick=()=>{if(scoped){scopeZoom=scopeZoom===2?4:2;setScopeZoom();}};
 renderer.domElement.addEventListener('pointerdown',e=>{
-  if(!scoped||mode!=='play'||e.button!==0)return;
+  if(!scoped||mode!=='play'||e.button!==0||scopeDrag)return;
   scopeDrag={id:e.pointerId,x:e.clientX,y:e.clientY,moved:0};renderer.domElement.setPointerCapture(e.pointerId);
 });
 renderer.domElement.addEventListener('pointermove',e=>{
@@ -123,7 +125,8 @@ renderer.domElement.addEventListener('pointermove',e=>{
 renderer.domElement.addEventListener('pointercancel',()=>{scopeDrag=null;});
 renderer.domElement.addEventListener('pointerup',e=>{
   if(mode!=='play'||e.button!==0)return;
-  if(scoped){const clicked=scopeDrag&&scopeDrag.moved<5;scopeDrag=null;if(clicked)attack();return;}
+  if(scoped){if(scopeDrag?.id!==e.pointerId)return;const clicked=scopeDrag.moved<5&&e.pointerType==='mouse';scopeDrag=null;if(clicked)attack();return;}
+  if(e.pointerType==='touch')return;
   pointer.set(e.clientX/innerWidth*2-1,1-e.clientY/innerHeight*2);raycaster.setFromCamera(pointer,camera);
   const hitActor=raycaster.intersectObjects(activeTargets().map(e=>e.g),true)[0];
   if(hitActor&&state.weapon==='rifle'){toggleScope();return;}
@@ -206,7 +209,7 @@ function attack(){
 function heal(){if(mode!=='play'||state.med<1||state.hp>=fitness.maxHP)return;state.med--;state.hp=Math.min(fitness.maxHP,state.hp+32+Math.round(sc('lifeline')*38));tone(600,.2);toast('応急処置で体力を回復。');updateHUD();save()}
 function blocked(x,z){return Math.abs(x)>62||Math.abs(z)>72||colliders.some(b=>Math.abs(x-b.x)<b.w/2+.4&&Math.abs(z-b.z)<b.d/2+.4)}
 function moveActor(g,dx,dz){let x=g.position.x+dx,z=g.position.z+dz;if(inside){const hit=(xx,zz)=>(xx< -2.4&&xx> -5.6&&Math.abs(zz)<1.1)||(xx>2.5&&xx<5.5&&zz> -1.1&&zz<3.1)||zz< -4;if(!hit(x,g.position.z))g.position.x=clamp(x,-5.7,5.7);if(!hit(g.position.x,z))g.position.z=clamp(z,-5.7,5.7)}else{if(!blocked(x,g.position.z))g.position.x=x;if(!blocked(g.position.x,z))g.position.z=z}}
-function finish(won){exitScope();mode='end';clearDestination();keys.clear();$('#ending').hidden=false;$('#endLabel').textContent=won?'EXTRACTION COMPLETE':'SIGNAL LOST';$('#endTitle').textContent=won?'生還。':'通信途絶。';$('#endText').textContent=won?`作戦時間 ${Math.floor(state.seconds/60)}分${Math.floor(state.seconds%60)}秒 / 排除 ${state.killed.length}体 / 狩猟 ${state.harvested.length}頭。`:'移動しながら距離を取り、スタミナを残して戦おう。装備室の肉体記録がHPと持久力に反映されます。';state.won=won;save()}
+function finish(won){exitScope();mode='end';clearDestination();keys.clear();resetStick();$('#ending').hidden=false;$('#endLabel').textContent=won?'EXTRACTION COMPLETE':'SIGNAL LOST';$('#endTitle').textContent=won?'生還。':'通信途絶。';$('#endText').textContent=won?`作戦時間 ${Math.floor(state.seconds/60)}分${Math.floor(state.seconds%60)}秒 / 排除 ${state.killed.length}体 / 狩猟 ${state.harvested.length}頭。`:'移動しながら距離を取り、スタミナを残して戦おう。装備室の肉体記録がHPと持久力に反映されます。';state.won=won;save()}
 function interact(){
   if(mode!=='play'||!near)return;exitScope();clearDestination();selected=null;tone(450);
   if(near.type==='door'){onBike=false;inside=near;Object.entries(indoorProps).forEach(([id,g])=>g.visible=id===inside.id);world.visible=false;interiors.visible=true;player.position.set(0,0,4);scene.fog.density=.006;crate.visible=!state.loot.includes(near.id);toast(near.name+' / 奥の物資を調べる');}
@@ -222,12 +225,12 @@ $('#interact').onclick=interact;
 $('#tasks').onclick=e=>{const b=e.target.closest('[data-destination]');if(!b||mode!=='play'||inside)return;const d=interactions.find(i=>i.id===b.dataset.destination);setDestination(new THREE.Vector3(d.x,0,d.z));toast(d.name+'へ移動。障害物は道路をクリックして迂回してください。');};
 $('#forestButton').onclick=()=>{if(mode==='play'&&!inside){setDestination(new THREE.Vector3(0,0,6),[new THREE.Vector3(0,0,48)]);toast('南の森林へ移動。鹿は緑色のミニマップ表示。');}};
 $('#carcassButton').onclick=()=>{if(mode!=='play'||inside)return;const d=deer.filter(e=>e.hp<=0).sort((a,b)=>distanceTo(a)-distanceTo(b))[0];if(d)setDestination(new THREE.Vector3(d.g.position.x,0,d.g.position.z));};
-function pause(){if(mode==='play'){exitScope();mode='paused';clearDestination();keys.clear();runToggle=false;stamina.sprinting=false;$('#pauseScreen').hidden=false;updateVitals();save();}}
-function resume(){mode='play';$('#pauseScreen').hidden=true;keys.clear();}
+function pause(){if(mode==='play'){exitScope();mode='paused';clearDestination();keys.clear();resetStick();runToggle=false;stamina.sprinting=false;$('#pauseScreen').hidden=false;updateVitals();save();}}
+function resume(){mode='play';$('#pauseScreen').hidden=true;keys.clear();resetStick();}
 $('#pause').onclick=pause;$('#resume').onclick=resume;
 function restart(){resetting=true;state=fresh();try{localStorage.setItem(SAVE,JSON.stringify(state))}catch{}location.reload();}
 $('#restart').onclick=()=>{if(confirm('この試作ゲームの作戦進行をリセットしますか？スキルの記録は残ります。'))restart();};$('#again').onclick=restart;
-$('#startButton').textContent=stored&&state.seconds>0?'前回の作戦を続ける ↗':'作戦を開始する ↗';$('#startButton').onclick=()=>{mode='play';grace=8;$('#start').hidden=true;document.body.classList.remove('briefing');toast('ライフルは T でスコープ。ドラッグで照準を合わせ、クリック / F で射撃。');updateHUD();};
+$('#startButton').textContent=stored&&state.seconds>0?'前回の作戦を続ける ↗':'作戦を開始する ↗';$('#startButton').onclick=()=>{requestLandscape();mode='play';grace=8;$('#start').hidden=true;document.body.classList.remove('briefing');toast(isTouch()?'左スティックで移動。走る・攻撃は右側。スコープ内をドラッグして照準。':'ライフルは T でスコープ。ドラッグで照準を合わせ、クリック / F で射撃。');updateHUD();};
 for(const button of document.querySelectorAll('[data-weapon]'))button.onclick=()=>equip(button.dataset.weapon);
 $('#attackButton').onclick=attack;$('#targetButton').onclick=cycleTarget;$('#healButton').onclick=heal;
 $('#runButton').onclick=()=>{if(mode==='play'){runToggle=!runToggle;updateVitals();}};
@@ -250,8 +253,31 @@ window.addEventListener('keydown',e=>{
  else if(k===' '&&e.target.closest('button,a'))return;
  else{if(k===' ')e.preventDefault();keys.add(k);}
 });
-window.addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));window.addEventListener('blur',()=>{keys.clear();pause();});document.addEventListener('visibilitychange',()=>{if(document.hidden)pause();});window.addEventListener('pagehide',save);
-for(const b of document.querySelectorAll('[data-key]')){b.onpointerdown=e=>{e.preventDefault();if(mode==='play')keys.add(b.dataset.key);b.setPointerCapture(e.pointerId);};b.onpointerup=b.onpointercancel=()=>keys.delete(b.dataset.key);}
+window.addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));window.addEventListener('blur',()=>{keys.clear();resetStick();pause();});document.addEventListener('visibilitychange',()=>{if(document.hidden)pause();});window.addEventListener('pagehide',save);
+function resetStick(){stick.x=0;stick.y=0;stick.id=null;$('#stickKnob').style.transform='translate(-50%,-50%)';$('#joystick').classList.remove('active');}
+function moveStick(e){
+ const r=$('#joystick').getBoundingClientRect(),radius=r.width*.32;
+ let x=(e.clientX-r.left-r.width/2)/radius,y=(e.clientY-r.top-r.height/2)/radius;
+ const length=Math.hypot(x,y);if(length>1){x/=length;y/=length;}
+ const strength=Math.max(0,(Math.min(length,1)-.12)/.88);
+ stick.x=length>.12?x/Math.hypot(x,y)*strength:0;stick.y=length>.12?y/Math.hypot(x,y)*strength:0;
+ $('#stickKnob').style.transform=`translate(calc(-50% + ${x*radius}px),calc(-50% + ${y*radius}px))`;
+}
+$('#joystick').onpointerdown=e=>{if(mode!=='play'||scoped||stick.id!==null)return;e.preventDefault();stick.id=e.pointerId;clearDestination();$('#joystick').setPointerCapture(e.pointerId);$('#joystick').classList.add('active');moveStick(e);};
+$('#joystick').onpointermove=e=>{if(e.pointerId===stick.id){e.preventDefault();moveStick(e);}};
+for(const event of ['pointerup','pointercancel','lostpointercapture'])$('#joystick').addEventListener(event,e=>{if(e.pointerId===stick.id)resetStick();});
+async function requestLandscape(){
+ if(!isTouch())return;
+ try{if(!document.fullscreenElement&&document.documentElement.requestFullscreen)await document.documentElement.requestFullscreen();}catch{}
+ try{await screen.orientation?.lock?.('landscape');}catch{}
+}
+function checkOrientation(){
+ const portrait=isTouch()&&innerHeight>innerWidth;
+ $('#rotatePrompt').hidden=!portrait;
+ if(portrait&&mode==='play')pause();
+}
+$('#landscapeButton').onclick=requestLandscape;
+window.addEventListener('resize',checkOrientation);document.addEventListener('fullscreenchange',checkOrientation);checkOrientation();
 $('#touchRotate').onclick=()=>targetAngle+=Math.PI/2;
 function refreshProfile(){
   const hpFraction=state.hp/fitness.maxHP,staminaFraction=stamina.value/fitness.maxStamina;
@@ -280,9 +306,10 @@ function frame(now){
  if(mode==='play'){
   simTime+=dt;state.seconds+=dt;grace=Math.max(0,grace-dt);
   let ix=(keys.has('d')||keys.has('arrowright')?1:0)-(keys.has('a')||keys.has('arrowleft')?1:0),iz=(keys.has('s')||keys.has('arrowdown')?1:0)-(keys.has('w')||keys.has('arrowup')?1:0),dx=0,dz=0;
+  if(!scoped&&(stick.x||stick.y)){ix=stick.x;iz=stick.y;}
   if(scoped){const turn=.48*(2/scopeZoom);scopeYaw+=((keys.has('arrowleft')?1:0)-(keys.has('arrowright')?1:0))*dt*turn;scopePitch=clamp(scopePitch+((keys.has('arrowup')?1:0)-(keys.has('arrowdown')?1:0))*dt*turn,-.9,.9);player.rotation.y=scopeYaw;ix=0;iz=0;}
   if(!scoped&&keys.has('q'))targetAngle+=dt*1.2;if(!scoped&&keys.has('r'))targetAngle-=dt*1.2;
-  if(ix||iz){clearDestination();const l=Math.hypot(ix,iz),a=angle+.62;dx=ix/l*Math.cos(a)+iz/l*Math.sin(a);dz=-ix/l*Math.sin(a)+iz/l*Math.cos(a);}
+  if(ix||iz){clearDestination();const l=Math.hypot(ix,iz),a=angle+.62,m=Math.min(1,l);dx=(ix/l*Math.cos(a)+iz/l*Math.sin(a))*m;dz=(-ix/l*Math.sin(a)+iz/l*Math.cos(a))*m;}
   else if(destination){const x=destination.x-player.position.x,z=destination.z-player.position.z,l=Math.hypot(x,z);if(l<.35){if(waypoints.length){const next=waypoints.shift();setDestination(next,waypoints);}else clearDestination();}else{dx=x/l;dz=z/l;}}
   const wantsRun=runToggle||keys.has('shift'),canRun=wantsRun&&!onBike&&!stamina.exhausted&&stamina.value>0;
   const speed=onBike?9+sc('mobility')*4:canRun?fitness.runSpeed:fitness.walkSpeed;
