@@ -1,0 +1,7 @@
+(()=>{
+function sync(){try{localStorage.setItem('the-day-deadzone-skills-v1',JSON.stringify({body:{...bodyVals},scores:Object.fromEntries(spokes().map(s=>[s.key,s.score])),levels:Object.fromEntries(CATS.flatMap(c=>c.skills.map(s=>[s.id,s.lv])))}))}catch{}}
+sync();new MutationObserver(sync).observe(document.querySelector('#gearGrid'),{childList:true,subtree:true});
+const panel=document.querySelector('#panel-sim');const original=document.createElement('details');original.className='legacy-game';const summary=document.createElement('summary');summary.textContent='従来の2Dゲーム・クイック査定を開く';original.append(summary);while(panel.firstChild)original.append(panel.firstChild);panel.append(original);
+const entry=document.createElement('div');entry.className='deadzone-launch';entry.innerHTML='<span class="label">STANDALONE 3D EXPERIENCE / ALPHA</span><h2>DEAD<br>ZONE<span>.</span></h2><p>この街で、身につけた力を試せ。</p><div class="launch-tags"><span>3D探索</span><span>リアルタイム戦闘</span><span>手動スコープ射撃</span></div><a href="game.html" target="_blank" rel="noopener">3Dゲームを別画面で開く ↗</a><small>PC：WASD移動 / Shift走る / 3でライフル / Tでスコープ / F射撃<br>照準はドラッグ、倍率はZで2倍・4倍。スマホは画面のボタンで操作。</small>';panel.prepend(entry);entry.querySelector('a').addEventListener('click',sync);
+const home=document.createElement('a');home.className='game-home-link';home.href='game.html';home.target='_blank';home.rel='noopener';home.innerHTML='<span>FIELD OPERATION / 01</span><strong>DEAD ZONE</strong><em>スコープ射撃・3D探索へ ↗</em>';home.addEventListener('click',sync);document.querySelector('#panel-hq .astra-heading').after(home);
+})();
