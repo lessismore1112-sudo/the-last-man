@@ -2663,11 +2663,11 @@ if (game && game.battle && !game.over) openBattleMenu();
 
 <script>
 if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js"));
+  window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js", { updateViaCache: "none" }));
 }
 </script>
 
-<script src="astra.js"></script>
+<script src="astra.js?v=codename-2"></script>
 <script src="game-launcher.js"></script>
 </body>
 </html>
