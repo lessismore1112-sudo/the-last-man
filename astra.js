@@ -1,6 +1,10 @@
 (()=>{
 const hq=document.querySelector('#panel-hq');
-hq.insertAdjacentHTML('afterbegin','<div class="astra-heading"><div><p>PERSONNEL / FIELD READINESS</p><h2>生存者の装備室</h2></div><span class="live">● FIELD READY</span></div>');
+hq.insertAdjacentHTML('afterbegin','<div class="astra-heading"><div><p>PERSONNEL / FIELD READINESS</p><h2 id="operatorCodename"></h2></div><span class="live">● FIELD READY</span></div>');
+const nameSource=document.getElementById('pfName');
+const syncCodename=()=>{document.getElementById('operatorCodename').textContent=nameSource.textContent.trim()||'名無しの生存者';};
+syncCodename();
+new MutationObserver(syncCodename).observe(nameSource,{childList:true,characterData:true,subtree:true});
 const hero=document.querySelector('.hero');hero.append(document.querySelector('.zomcon'));
 document.querySelector('.hero-side>.label').textContent='01 / OPERATOR · 3D LOADOUT';
 document.querySelector('.hero-main>.label').textContent='02 / READINESS · 生存能力';
